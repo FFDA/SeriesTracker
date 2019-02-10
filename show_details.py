@@ -327,7 +327,7 @@ class ShowDetails:
     def print_single_season(self):
         season_to_print = input()
         print(template.seperator)
-        print(template.episode_table_header.format("Watched", "Episode Number", "Air Date", "Episode Title"))
+        print(template.episode_table_header.format("Watched", "Episode Number", "IMDB_id", "Air Date", "Episode Title"))
         if season_to_print == '0':
             for row in cur.execute("SELECT * FROM %s WHERE season = '%s' ORDER BY episode_seasonal_id ASC" % (self.current_IMDB_id, '')):
                 print(self.add_colors_to_row(row))
