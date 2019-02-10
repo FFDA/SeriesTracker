@@ -196,6 +196,7 @@ class UpdateShows:
             # Checking if episode anctually axists. If it does, variables names are assing to it's information
             if episode_from_database != None:
 
+                current_episode_season = episode_from_database[1]
                 current_episode_number = episode_from_database[2]
                 current_episode_year = episode_from_database[5]
                 current_episode_title = episode_from_database[6]
@@ -207,7 +208,7 @@ class UpdateShows:
                 fetched_episode_air_date = episode["releaseDate"]["first"]["date"]
 
                 # Checking if there is a difference between the fetched data from IMDB and database. If so data is formated and record is updated.
-                if current_episode_number != fetched_episode_number or current_episode_year != fetched_episode_year or current_episode_title != fetched_episode_title or current_episode_air_date != fetched_episode_air_date:
+                if current_episode_season != current_season or current_episode_number != fetched_episode_number or current_episode_year != fetched_episode_year or current_episode_title != fetched_episode_title or current_episode_air_date != fetched_episode_air_date:
                 
                     if current_season <= 9:
                         new_episode_seasonal_id_season = "S0" + str(current_season)
@@ -221,8 +222,8 @@ class UpdateShows:
                     fetched_episode_seasonal_id = new_episode_seasonal_id_season + new_episode_seasonal_id_number
                     
                     # Updating episodes information
-                    update_episode_string = ("UPDATE '%s' SET episode = ?, episode_seasonal_id = ?, episode_year = ?, episode_title = ?, air_date = ? WHERE episode_IMDB_id = ?" % current_IMDB_id)
-                    cur.execute(update_episode_string, (fetched_episode_number, fetched_episode_seasonal_id, fetched_episode_year, fetched_episode_title, fetched_episode_air_date, fetched_episode_IMDB_id))
+                    update_episode_string = ("UPDATE '%s' SET season = ?, episode = ?, episode_seasonal_id = ?, episode_year = ?, episode_title = ?, air_date = ? WHERE episode_IMDB_id = ?" % current_IMDB_id)
+                    cur.execute(update_episode_string, (int(current_season), fetched_episode_number, fetched_episode_seasonal_id, fetched_episode_year, fetched_episode_title, fetched_episode_air_date, fetched_episode_IMDB_id))
                     con.commit()
                     # Setting updated episode counter +1
                     updated_episode_count += 1
@@ -312,6 +313,7 @@ class UpdateShows:
                     fetched_episode_air_date = ""
                     
 
+                corrent_episode_
                 current_episode_number = episode_from_database[2]
                 current_episode_year = episode_from_database[5]
                 current_episode_title = episode_from_database[6]
