@@ -32,48 +32,7 @@ template = Templates()
 
 class ShowDetails:
 
-    def __init__(self):
-        # Empty string to place IMDB_id of the show user plans to look at.
-        self.current_IMDB_id = ""
-        self.current_title = ""
-        self.current_image = ""
-        self.current_synopsis = ""
-        self.current_full_seasons = "" # This variable contains ALL seasons in INTEGER
-        self.current_all_seasons = "" # This variable contains seasons as INTEGET without None season
-        self.unknown_season = "" # This valiable was introduced to make a decent way of adding and displayng unknown season episodes.
-        self.current_running_time = ""
-        self.current_finished_airing = ""
-        self.current_genres = ""
-        self.current_years_aired = ""
-        self.current_finished_watching = ""
-        self.current_episodes_watched = ""
-
-    # This function was created to fix a problem were after updating show seasons "None" season wasn't shown in printed list because function used not updated variable.
-    def generate_self_variables(self):
-        
-        cur.execute("SELECT * FROM shows WHERE IMDB_id = '%s'" % self.current_IMDB_id)
-        show_info = cur.fetchone()
-
-        self.current_title = show_info[1]
-        self.current_image = show_info[2]
-        self.current_synopsis = show_info[3]
-        self.current_full_seasons = show_info[4]
-        self.current_genres = show_info[5]
-        self.current_running_time = show_info[6]
-        self.current_finished_airing = show_info[7]
-        self.current_years_aired = show_info[8]
-        self.current_finished_watching = show_info[9]
-
-        cur.execute("SELECT DISTINCT season FROM %s" % self.current_IMDB_id)
-        self.current_all_seasons = cur.fetchall()
-        
-        # Getting count of how many episodes are actually marked as watched.
-        cur.execute("SELECT COUNT(*) FROM %s WHERE episode_watched = 1" % self.current_IMDB_id)
-        self.current_episodes_watched = cur.fetchone()
-
-        if len(self.current_all_seasons) > self.current_full_seasons:
-            self.unknown_season = 1
-
+#     def __init__(self):
 
     def latest_episodes(self):
         # Variable containing currrent date and year.
@@ -236,41 +195,38 @@ class ShowDetails:
         print(template.seperator)
     
     # Printing information about the show thats was chosen.
-    def show_info(self):
+    def show_info(self, current_episodes_watched, current_title, current_years_aired, current_finished_airing, current_genres, current_running_time, current_full_seasons, current_unknown_season, current_finished_watching, current_synopsis):
 
         # Lambda for printing airing / finsihed airing message
         airing_or_finished = lambda x: "Still airing" if x == 1 else "Finished Airing"
         # Lambda for printing info if there is a extra "Unknown" season
-        unknown_season_exists = lambda x: " + 'Unknow' season" if x == 1 else ""
+        current_unknown_season_exists = lambda x: " + 'Unknow' season" if x == 1 else ""
 
-        self.generate_self_variables()
-
-        current_watched_minutes = self.current_episodes_watched[0] * self.current_running_time
+        current_watched_minutes = current_episodes_watched[0] * current_running_time
     
         print(template.empty.format(" "))
         print(template.seperator)
-        print(template.show_info.format(self.current_title))
-        print(template.show_info.format(self.current_years_aired + " (" + airing_or_finished(self.current_finished_airing) + ")" ))
-        print(template.show_info.format("Genres: " + self.current_genres))
-        print(template.show_info.format("Episode runtime: " + str(self.current_running_time) + " minutes"))
-        print(template.show_info.format(str(self.current_full_seasons) + " season(s)" + unknown_season_exists(self.unknown_season)))
+        print(template.show_info.format(current_title))
+        print(template.show_info.format(current_years_aired + " (" + airing_or_finished(current_finished_airing) + ")" ))
+        print(template.show_info.format("Genres: " + current_genres))
+        print(template.show_info.format("Episode runtime: " + str(current_running_time) + " minutes"))
+        print(template.show_info.format(str(current_full_seasons) + " season(s)" + current_unknown_season_exists(current_unknown_season)))
         print(template.show_info.format("You watched this show for %s minutes (%s hours/%s days)" % (str(current_watched_minutes), str(round(current_watched_minutes / 60)), str(round(current_watched_minutes/1440, 1)))))
-
-        if self.current_finished_watching == 0:
+        if current_finished_watching == 0:
             list_name = "Watchlist"
-        elif self.current_finished_watching == 1:
+        elif current_finished_watching == 1:
             list_name = "Finished Watching"
-        elif self.current_finished_watching == 2:
+        elif current_finished_watching == 2:
             list_name = "Plan to Watch"
 
         print(template.show_info.format("Currently in - %s - list" % list_name))
-        if self.unknown_season == 1:
+        if current_unknown_season == 1:
             print(template.empty.format("  "))
             print(template.seperator)
             print(template.show_info.format("This show also has unknown season, that might contain future/uneired/pilot episodes"))
             print(template.seperator)
         print(template.empty.format(" "))
-        print(template.empty.format(textwrap.fill(self.current_synopsis, 100)))
+        print(template.empty.format(textwrap.fill(current_synopsis, 100)))
         print(template.empty.format(" "))
         print(template.seperator)
         print(template.empty.format(" "))
@@ -298,41 +254,47 @@ class ShowDetails:
                     return(template.episodes_unseen.format(checkmark(row[0]), row[4], row[3], row[7], textwrap.shorten(row[6], 40)))
     
     # Prints all seasons of the show. Prints unknows season at the end of the list.
-    def print_show_eps(self):
+    def print_show_eps(self, current_IMDB_id, current_full_seasons, current_unknown_season):
         print(template.seperator)
         print(template.episode_table_header.format("Watched", "Episode Number", "IMDB_id", "Air Date", "Episode Title"))
         print(template.seperator)
-        for season in range(1, self.current_full_seasons + 1):
+        for season in range(1, current_full_seasons + 1):
             print(template.show_info.format("Season " + str(season)))
             print(template.seperator)
-            for row in cur.execute("SELECT * FROM %s WHERE season = %d ORDER BY episode_seasonal_id ASC" % (self.current_IMDB_id, season)):
+            for row in cur.execute("SELECT * FROM %s WHERE season = %d ORDER BY episode_seasonal_id ASC" % (current_IMDB_id, season)):
                 print(self.add_colors_to_row(row))
             print(template.seperator)
-        if self.unknown_season == 1:
+        if current_unknown_season == 1:
             print(template.show_info.format("Unknown"))
             print(template.seperator)
-            for row in cur.execute("SELECT * FROM %s WHERE season = '%s'" % (self.current_IMDB_id, '')):
+            for row in cur.execute("SELECT * FROM %s WHERE season = '%s'" % (current_IMDB_id, '')):
                 print(self.add_colors_to_row(row))
         print(template.empty.format(" "))
         print(template.seperator)
 
     # Askes user to choose from one of the available seasons of the show. input() function has to be in a different function. This function is just to print the season numbers.
-    def choose_single_season(self):
-        print(template.request_response.format("Choose the season to print (1-%s)" % self.current_full_seasons))
+    def choose_single_season(self, current_full_seasons, current_unknown_season):
+        print(template.request_response.format("Choose the season to print (1-%d)" % current_full_seasons))
         # Offers to print unknown season if it exists.
-        if self.unknown_season == 1:
+        if current_unknown_season == 1:
             print(template.request_response.format("There is a 'Unknown' seasons. If you want to select it - type 0"))
+        chosen_season = int(input())
+        
+        if chosen_season >= 0 and chosen_season < current_full_seasons + current_unknown_season:
+            return chosen_season
+        else:
+            print(template.information.format("There is no season %d for this show" % chosen_season))
+            return self.choose_single_season(current_full_seasons, current_unknown_season)
 
     # Prints season from user input.
-    def print_single_season(self):
-        season_to_print = input()
+    def print_single_season(self, current_IMDB_id, season_to_print):
         print(template.seperator)
         print(template.episode_table_header.format("Watched", "Episode Number", "IMDB_id", "Air Date", "Episode Title"))
         if season_to_print == '0':
-            for row in cur.execute("SELECT * FROM %s WHERE season = '%s' ORDER BY episode_seasonal_id ASC" % (self.current_IMDB_id, '')):
+            for row in cur.execute("SELECT * FROM %s WHERE season = '%s' ORDER BY episode_seasonal_id ASC" % (current_IMDB_id, '')):
                 print(self.add_colors_to_row(row))
         else:
-            for row in cur.execute("SELECT * FROM %s WHERE season = '%s' ORDER BY episode_seasonal_id ASC" % (self.current_IMDB_id, season_to_print)):
+            for row in cur.execute("SELECT * FROM %s WHERE season = '%d' ORDER BY episode_seasonal_id ASC" % (current_IMDB_id, season_to_print)):
                 print(self.add_colors_to_row(row))
         print(template.empty.format(" "))
         print(template.seperator)

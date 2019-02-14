@@ -64,15 +64,12 @@ cur = con.cursor()
 
 class SeriesTracker:
 
-    def __init__(self):
-        self.current_IMDB_id = ""
-        self.finished_watching = ""
-        self.unknown_season = "" # Variable use to to mark of the show has unknown season
+    # def __init__(self):
 
     def innitial_options(self):
     
         # Asking user to choose one of the options from main menu.
-        print(template.text.format("Please choose from the option bellow or paste IMDB id"))
+        print(template.request_response.format("Please choose from the option bellow or paste IMDB id"))
         user_option_list = ["Watchlist", "Plan to Watch", "Finished", "Latest Episodes", "Upcoming Episodes", "Print All Shows", "Search Database", "Add Shows to the Database", "Manage Database"]
     
         for option in range(len(user_option_list)):
@@ -124,13 +121,52 @@ class SeriesTracker:
         show_details.next_episodes()
         print(template.empty.format("  "))
     
+    # This function fetches show info from shows table and assigns variables.
+#     def generate_self_variables(self, IMDB_id):
+#         
+#         cur.execute("SELECT * FROM shows WHERE IMDB_id = '%s'" % IMDB_id)
+#         show_info = cur.fetchone()
+# 
+#         self.current_title = show_info[1]
+#         self.current_image = show_info[2]
+#         self.current_synopsis = show_info[3]
+#         self.current_full_seasons = show_info[4]
+#         self.current_genres = show_info[5]
+#         self.current_running_time = show_info[6]
+#         self.current_finished_airing = show_info[7]
+#         self.current_years_aired = show_info[8]
+#         self.current_finished_watching = show_info[9]
+#         self.current_unknown_season = show_info[10]
+# 
+#         # Getting count of how many episodes are actually marked as watched.
+#         cur.execute("SELECT COUNT(*) FROM %s WHERE episode_watched = 1" % self.current_IMDB_id)
+#         self.current_episodes_watched = cur.fetchone()
+# 
+#         self.current_all_seasons = self.current_full_seasons + self.unknown_season
+
     def fetch_show_info(self):
         if validate.title_exists_in_database(self.current_IMDB_id):
-            cur.execute("SELECT EXISTS (SELECT * FROM %s WHERE season = '')" % self.current_IMDB_id)
-            self.unknown_season = cur.fetchone()
-            show_details.current_IMDB_id = self.current_IMDB_id
-            show_details.unknown_season = self.unknown_season[0]
-            show_details.show_info()
+            cur.execute("SELECT * FROM shows WHERE IMDB_id = '%s'" % self.current_IMDB_id)
+            show_info = cur.fetchone()
+    
+            self.current_title = show_info[1]
+            self.current_image = show_info[2]
+            self.current_synopsis = show_info[3]
+            self.current_full_seasons = show_info[4]
+            self.current_genres = show_info[5]
+            self.current_running_time = show_info[6]
+            self.current_finished_airing = show_info[7]
+            self.current_years_aired = show_info[8]
+            self.current_finished_watching = show_info[9]
+            self.current_unknown_season = show_info[10]
+    
+            # Getting count of how many episodes are actually marked as watched.
+            cur.execute("SELECT COUNT(*) FROM %s WHERE episode_watched = 1" % self.current_IMDB_id)
+            self.current_episodes_watched = cur.fetchone()
+    
+            self.current_all_seasons = self.current_full_seasons + self.current_unknown_season
+
+            show_details.show_info(self.current_episodes_watched, self.current_title, self.current_years_aired, self.current_finished_airing, self.current_genres, self.current_running_time, self.current_full_seasons, self.current_unknown_season, self.current_finished_watching, self.current_synopsis)
             self.show_info_menu()
         else:
             print(template.information.format("Show - " + self.current_IMDB_id + " - doesn't exists in the database or not valid ID."))
@@ -208,11 +244,11 @@ class SeriesTracker:
 
         self.innitial_options()
       
-    # This funtions uses search_show_title funktion in show_details class to find a show in the database and get it's IMDB_id.
+    # This funtions uses search_show_title function in show_details class to find a show in the database and get it's IMDB_id.
     # If search is successful show_info table and menu will be printed.    
     # If search was unsuccessful user will be promted and offered and option to do the search again or go to main manu.
     def search_database_to_show_info(self):
-        print(template.text.format("Please type show title."))
+        print(template.request_response.format("Please type show title."))
         search_string = input()
         
         # Checking if sting is not empty.
@@ -237,7 +273,7 @@ class SeriesTracker:
 
     # This function is a clone of function above, that made to work to other functions that need to find show in the DB and get IMDB_id instead of printing show info with menu.
     def search_database(self):
-        print(template.text.format("Please type show title."))
+        print(template.request_response.format("Please type show title."))
         search_string = input()
         
         # Checking if sting is not empty.
@@ -262,7 +298,7 @@ class SeriesTracker:
 
     # Printing information meniu that deals with ways of printing shows in the database.
     def show_info_menu(self):
-        option_list = ["Mark next episode as watched", "Print all episodes", "Print single season", "Mark seasons/episodes as watched/not watched", "Update show/season", "Open IMDB page", "Main menu"]
+        option_list = ["Mark next episode as watched", "Print all episodes", "Print single season", "Mark seasons/episodes as watched/not watched", "Update show/season", "Fix season", "Open IMDB page", "Main menu"]
         print(template.request_response.format("Choose one from available options:"))
         for option in range(len(option_list)):
             print(template.menu_option.format(str(option + 1) + ".", option_list[option]))
@@ -277,12 +313,11 @@ class SeriesTracker:
             manage_database.mark_next_episode_watched(self.current_IMDB_id)
             self.show_info_menu()
         elif chosen_option == "2":
-            show_details.generate_self_variables( )
-            show_details.print_show_eps()
+            show_details.print_show_eps(self.current_IMDB_id, self.current_full_seasons, self.current_unknown_season)
             self.show_info_menu()
         elif chosen_option == "3":
-            show_details.choose_single_season()
-            show_details.print_single_season()
+            season_to_print = show_details.choose_single_season(self.current_full_seasons, self.current_unknown_season)
+            show_details.print_single_season(self.current_IMDB_id, season_to_print)
             self.show_info_menu()
         elif chosen_option == "4":
             self.mark_seasons_episodes_as_watched_menu()
@@ -291,9 +326,12 @@ class SeriesTracker:
             self.update_menu()
             self.show_info_menu()
         elif chosen_option == "6":
-            self.open_imdb_page()
+            self.fix_season()
             self.show_info_menu()
         elif chosen_option == "7":
+            self.open_imdb_page()
+            self.show_info_menu()
+        elif chosen_option == "8":
             self.innitial_options()
         elif chosen_option == "0":
             self.exit_program()
@@ -306,9 +344,13 @@ class SeriesTracker:
         imdb_url = "https://www.imdb.com/title/" + self.current_IMDB_id
         webbrowser.open(imdb_url, new=2, autoraise=True)
 
+    def fix_season(self):
+        chosen_season = show_details.choose_single_season(self.current_full_seasons, self.current_unknown_season)
+        update_shows.fix_season(self.current_IMDB_id, chosen_season, self.current_full_seasons)
+
     def update_menu(self):
         update_info_menu_options = ["Update show info", "Update single season", "Update show"]
-        print(template.text.format("Chose one out of available options"))
+        print(template.request_response.format("Chose one out of available options"))
         for option in range(len(update_info_menu_options)):
             print(template.menu_option.format(str(option + 1) + ".",  update_info_menu_options[option]))
         print(template.menu_option.format("0.", "Return to previous menu"))
@@ -318,10 +360,10 @@ class SeriesTracker:
     def execute_update_menu_option(self, chosen_option):
         if chosen_option == "1":
             update_shows.update_show_info(self.current_IMDB_id)
+            self.fetch_show_info()
             self.show_info_menu()
         elif chosen_option == "2":
-            show_details.choose_single_season()
-            chosen_season = int(input())
+            chosen_season = show_details.choose_single_season(self.current_full_seasons, self.current_unknown_season)
             update_shows.update_season(self.current_IMDB_id, chosen_season)
             self.show_info_menu()
         elif chosen_option == "3":
@@ -335,7 +377,7 @@ class SeriesTracker:
 
     def mark_seasons_episodes_as_watched_menu(self):
         mark_seasons_episodes_as_watched_menu_options = ["Mark season as watched", "Mark episode as watched", "Mark up to episode as watched", "Mark season as not watched", "Mark episode as not watched"]
-        print(template.text.format("Chose one out of available options"))
+        print(template.request_response.format("Choose one out of available options"))
         for option in range(len(mark_seasons_episodes_as_watched_menu_options)):
             print(template.menu_option.format(str(option + 1) + ".", mark_seasons_episodes_as_watched_menu_options[option]))
         print(template.menu_option.format("0.", "Return to previous menu"))
@@ -344,13 +386,15 @@ class SeriesTracker:
 
     def execute_chosen_mark_as_watched_option(self, chosen_option):
         if chosen_option == "1":
-            manage_database.mark_season_as_watched(self.current_IMDB_id)
+            chosen_season = show_details.choose_single_season(self.current_full_seasons, self.current_unknown_season)
+            manage_database.mark_season_as_watched(self.current_IMDB_id, chosen_season)
         elif chosen_option == "2":
             manage_database.mark_episode_as_watched(self.current_IMDB_id)
         elif chosen_option == "3":
             manage_database.mark_up_to_episode(self.current_IMDB_id)
         elif chosen_option == "4":
-            manage_database.mark_season_as_not_watched(self.current_IMDB_id)
+            chosen_season = show_details.choose_single_season(self.current_full_seasons, self.current_unknown_season)
+            manage_database.mark_season_as_not_watched(self.current_IMDB_id, chosen_season)
         elif chosen_option == "5":
             manage_database.mark_episode_as_not_watched(self.current_IMDB_id)
         elif chosen_option == "0":
@@ -362,7 +406,7 @@ class SeriesTracker:
     # This function manages "Manage Database" menu.
     def manage_database_menu(self):
         manage_database_options = ["Mark show as 'Finished'", "Add show to 'Watchlist'", "Mark show as 'Plan to Watch'", "Update shows in 'Watchlist'", "Delete show"]
-        print(template.text.format("Choose one out of available options"))
+        print(template.request_response.format("Choose one out of available options"))
         for option in range(len(manage_database_options)):
             print(template.menu_option.format(str(option + 1) + ".", manage_database_options[option]))
         print(template.menu_option.format(str(len(manage_database_options) + 1) + ".", "Main menu"))
@@ -400,7 +444,7 @@ class SeriesTracker:
         
         # Printing available options to the user.
         mark_as_finished_menu_options = ["Choose show from Watchlist", "Search the database"]
-        print(template.text.format("Please choose from the following options:"))
+        print(template.request_response.format("Please choose from the following options:"))
         for option in range(len(mark_as_finished_menu_options)):
             print(template.menu_option.format(str(option +1) + ".", mark_as_finished_menu_options[option]))
         print(template.menu_option.format("0.", "Cancel"))
@@ -409,7 +453,7 @@ class SeriesTracker:
        
         # Prints watchlist, validates user input and marks show as watched.
         if chosen_option == "1":
-            print(template.text.format("Choose from the following shows and copy IMDB id or press 0 to cancel."))
+            print(template.request_response.format("Choose from the following shows and copy IMDB id or press 0 to cancel."))
             show_details.tracked_shows(0)
             user_chosen_show_input = input()
             # Checks if user chose to cancel operation.
@@ -450,7 +494,7 @@ class SeriesTracker:
     def add_show_to_watchlist(self):
         # Printing available options to the user.
         add_show_to_watchlist_menu_options = ["Choose show from 'Plan to Watch'", "Search the database"]
-        print(template.text.format("Please choose from the following options:"))
+        print(template.request_response.format("Please choose from the following options:"))
         for option in range(len(add_show_to_watchlist_menu_options)):
             print(template.menu_option.format(str(option +1) + ".", add_show_to_watchlist_menu_options[option]))
         print(template.menu_option.format("0.", "Cancel"))
@@ -459,7 +503,7 @@ class SeriesTracker:
 
         # Prints watchlist, validates user input and marks show as watched.
         if chosen_option == "1":
-            print(template.text.format("Choose from the following shows and copy IMDB id or press 0 to cancel."))
+            print(template.request_response.format("Choose from the following shows and copy IMDB id or press 0 to cancel."))
             show_details.tracked_shows(2)
             user_chosen_show_input = input()
             # Checks if user chose to cancel operation.
@@ -501,7 +545,7 @@ class SeriesTracker:
         
         # Printing available options to the user.
         mark_show_as_plan_to_watch_menu_options = ["Choose show from Watchlist", "Search the database"]
-        print(template.text.format("Please choose from the following options:"))
+        print(template.request_response.format("Please choose from the following options:"))
         for option in range(len(mark_show_as_plan_to_watch_menu_options)):
             print(template.menu_option.format(str(option +1) + ".", mark_show_as_plan_to_watch_menu_options[option]))
         print(template.menu_option.format("0.", "Cancel"))
@@ -510,7 +554,7 @@ class SeriesTracker:
        
         # Prints watchlist, validates user input and marks show as watched.
         if chosen_option == "1":
-            print(template.text.format("Choose from the following shows and copy IMDB id or press 0 to cancel."))
+            print(template.request_response.format("Choose from the following shows and copy IMDB id or press 0 to cancel."))
             show_details.tracked_shows(0)
             user_chosen_show_input = input()
             # Checks if user chose to cancel operation.
@@ -555,9 +599,8 @@ class SeriesTracker:
 
         for current_IMDB_id in watchlist_IMDB_id_list:
             print(template.information.format("Updating %s" % current_IMDB_id[1]))
-            # print(current_IMDB_id[0])
             update_shows.update_show(current_IMDB_id[0])
-            # Delaying downloading next JSON file to nnot tigger API protection
+            # Delaying downloading next JSON file to not trigger API protection
             time.sleep(5)
 
 
@@ -565,7 +608,7 @@ class SeriesTracker:
 
         # Printing available options to the user.
         delete_show_menu_options = ["Print all show in the database", "Search the database"]
-        print(template.text.format("Please choose from the following options:"))
+        print(template.request_response.format("Please choose from the following options:"))
         for option in range(len(delete_show_menu_options)):
             print(template.menu_option.format(str(option +1) + ".", delete_show_menu_options[option]))
         print(template.menu_option.format("0.", "Cancel"))
@@ -574,7 +617,7 @@ class SeriesTracker:
        
         # Prints watchlist, validates user input and marks show as watched.
         if chosen_option == "1":
-            print(template.text.format("Choose from the following shows and copy IMDB id or press 0 to cancel."))
+            print(template.request_response.format("Choose from the following shows and copy IMDB id or press 0 to cancel."))
             show_details.tracked_shows(4)
             user_chosen_show_input = input()
             # Checks if user chose to cancel operation.

@@ -43,11 +43,6 @@ cur = con.cursor()
 class UpdateShows:
 
     def __init__(self):
-        # self.current_IMDB_id = current_IMDB_id 
-        # self.current_date = datetime.datetime.today().strftime("%Y-%m-%d")
-        # self.none_season_in_IMDB = 0
-        # self.none_season_in_DB = 0
-        # self.current_season = season
         
         # Pattern for IMDB_id
         self.pattern_to_look_for = re.compile("tt\d+")
@@ -65,10 +60,6 @@ class UpdateShows:
         current_years_aired = fetched_show_info[1]
         current_finished_airing = fetched_show_info[2]
 
-#         print(current_seasons)
-#         print(current_years_aired)
-#         print(current_finished_airing)
-# 
         cur.execute("SELECT EXISTS (SELECT * FROM %s WHERE season = '')" % current_IMDB_id)
         current_unknown_season = cur.fetchone()
 
@@ -102,11 +93,6 @@ class UpdateShows:
         elif len(years_aired) == 1:
             fetched_years_aired = years_aired[0] + " - "
 
-#         print("*")
-#         print(fetched_seasons)
-#         print(fetched_years_aired)
-#         print(fetched_finished_airing)
-
         if current_seasons != fetched_seasons:
             cur.execute("UPDATE shows SET seasons = %d WHERE IMDB_id = '%s'" % (fetched_seasons, current_IMDB_id))
             con.commit()
@@ -123,6 +109,9 @@ class UpdateShows:
             print(template.information.format("Show status updated"))
 
     def update_show(self, current_IMDB_id):
+        
+        self.update_show_info(current_IMDB_id)
+        # Might need to add a delay, because IMDB uses protections for to many request in short period of time.
         
         list_of_show_seasons = imdb.get_title_episodes_detailed(current_IMDB_id, 1)['allSeasons']
         if None in list_of_show_seasons:
@@ -144,36 +133,13 @@ class UpdateShows:
             else:
                 print(template.information.format("Show does not have 'Unknown' season in IMDB"))
         else:
-            cur.execute("SELECT EXISTS (SELECT * FROM %s WHERE season = '%s')" % (current_IMDB_id, current_season))
-            selection_check = cur.fetchone()
-            if selection_check[0] == 1:
-                self.update(current_IMDB_id, current_season)
-            else:
-                print(template.information.format("There is no season %s for this show" % current_season))
+            # cur.execute("SELECT EXISTS (SELECT * FROM %s WHERE season = '%s')" % (current_IMDB_id, current_season))
+            # selection_check = cur.fetchone()
+            # if selection_check[0] == 1:
+            self.update(current_IMDB_id, current_season)
+            # else:
+            #     print(template.information.format("There is no season %s for this show" % current_season))
         
-# # # # # # # # # # # # # # 
-#         # Setting season from which this class will update shows DB.
-#         cur.execute("SELECT season FROM %s WHERE air_date < '%s' ORDER BY air_date DESC" % (self.current_IMDB_id, self.current_date))
-#         first_season_to_u)date = cur.fetchone()[0] - 1
-# 
-#         random_season = imdb.get_title_episodes_detailed(self.current_IMDB_id, first_season_to_update)
-# 
-#         last_season_to_update = len(random_season["allSeasons"])
-
-        # Cheking if show has None season in IMDB or DB
-        # if None in random_season['allSeasons']:
-        #     self.none_season_in_IMDB = 1
-        #     print("None season in IMDB")
-        
-        # cur.execute("SELECT EXISTS (SELECT * FROM %s WHERE season = '')" % self.current_IMDB_id)
-        # check_if_season_none_exists = cur.fetchone()
-
-        
-        # if check_if_season_none_exists == 1:
-        #     self.none_season_in_DM = 1
-        #     print("None season in DB")
-# # # # # # # # # # # # # # 
-
     # This function updates given season's epsidoes and add's extra episodes to the season if it detects them in the JSON file download from IMDB
     def update(self, current_IMDB_id, current_season):
         
@@ -225,7 +191,7 @@ class UpdateShows:
                     update_episode_string = ("UPDATE '%s' SET season = ?, episode = ?, episode_seasonal_id = ?, episode_year = ?, episode_title = ?, air_date = ? WHERE episode_IMDB_id = ?" % current_IMDB_id)
                     cur.execute(update_episode_string, (int(current_season), fetched_episode_number, fetched_episode_seasonal_id, fetched_episode_year, fetched_episode_title, fetched_episode_air_date, fetched_episode_IMDB_id))
                     con.commit()
-                    # Setting updated episode counter +1
+                    # Setting updated episode counter +1 to print how many episodes where updated.
                     updated_episode_count += 1
         
             # If episode does not exist in the database it is inserted in as a new record. The same steps are taken as in add new shows episodes in the add_show.py file.   
@@ -313,7 +279,6 @@ class UpdateShows:
                     fetched_episode_air_date = ""
                     
 
-                corrent_episode_
                 current_episode_number = episode_from_database[2]
                 current_episode_year = episode_from_database[5]
                 current_episode_title = episode_from_database[6]
@@ -323,18 +288,11 @@ class UpdateShows:
                 if current_episode_number != fetched_episode_number or current_episode_year != fetched_episode_year or current_episode_title != fetched_episode_title or current_episode_air_date != fetched_episode_air_date:
 
                     # Updating episodes information
-                    
                     update_episode_string = ("UPDATE '%s' SET episode = ?, episode_seasonal_id = ?, episode_year = ?, episode_title = ?, air_date = ? WHERE episode_IMDB_id = ?" % current_IMDB_id)
                     cur.execute(update_episode_string, (fetched_episode_number, fetched_episode_seasonal_id, fetched_episode_year, fetched_episode_title, fetched_episode_air_date, fetched_episode_IMDB_id))
                     con.commit()
                     # Setting updated episode counter +1
                     updated_episode_count += 1
-#                     print(fetched_episode_number)
-#                     print(fetched_episode_IMDB_id)
-#                     print(fetched_episode_seasonal_id)
-#                     print(fetched_episode_air_date)
-#                     print(fetched_episode_year)
-#                     print(fetched_episode_title)
         
             # If episode does not exist in the database it is inserted in as a new record. The same steps are taken as in add new shows episodes in the add_show.py file.   
             else:
@@ -376,6 +334,41 @@ class UpdateShows:
             print(template.information.format("Updated %d episodes in 'None' season" % (updated_episode_count)))
         if added_episode_count > 0:
             print(template.information.format("Added %d episodes in 'None' season" % (added_episode_count)))
+
+    def fix_season(self, current_IMDB_id, chosen_season, current_full_seasons):
+        
+        if chosen_season == 0:
+            # Converting season variables to appropriate for different protocols.
+            IMDB_season = current_full_seasons + 1
+            DB_season = "" 
+        else:
+            IMDB_season = chosen_season
+            DB_season = chosen_season
+
+        # Retrieving season that user want to fix episodes from IMDB.
+        season_fix_imdb = imdb.get_title_episodes_detailed(current_IMDB_id, IMDB_season)
+
+        list_of_season_fix_imdb = []
+
+        for episode in season_fix_imdb["episodes"]:
+            list_of_season_fix_imdb.append(validate.check_if_input_contains_IMDB_id(episode["id"]))
     
-        # show_details.current_IMDB_id = current_IMDB_id
-        # show_details.generate_self_variables()
+        print("List from IMDB")
+        print(list_of_season_fix_imdb)
+        # Retrieving season that user wants to fix episodes from database.
+        
+        cur.execute("SELECT episode_IMDB_id FROM %s WHERE season == '%s'" % (current_IMDB_id, DB_season))
+        season_fix_db = cur.fetchall()
+
+        print("List from DB")
+        print(season_fix_db)
+
+        for episode in season_fix_db:
+            try:
+                list_of_season_fix_imdb.index(episode[0])
+                pass
+            except ValueError:
+                cur.execute("DELETE FROM %s WHERE episode_IMDB_id='%s'" % (current_IMDB_id, episode[0]))
+                print("Removed: %s" % episode[0])
+        
+        con.commit()

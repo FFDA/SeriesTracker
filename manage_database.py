@@ -155,59 +155,52 @@ class ManageDatabase:
         template.empty.format(" ")
         print(template.seperator)
 
-    def mark_season_as_watched(self, current_IMDB_id):
+    def mark_season_as_watched(self, current_IMDB_id, chosen_season):
         # Printing available seasons to choose from
         show_details.current_IMDB_id = current_IMDB_id
-        show_details.generate_self_variables()
-        show_details.choose_single_season()
-        season_to_mark = input()
         template.empty.format(" ")
 
         # Setting season to empty if user chose "None" season.
-        if season_to_mark == "0":
-            season_to_mark = ""
+        if chosen_season == 0:
+            chosen_season = ""
 
         # Checking if there are apisodes that are marked as not seen.
-        cur.execute("SELECT EXISTS (SELECT * FROM '%s' WHERE season = '%s' AND episode_watched = 0)" % (current_IMDB_id, season_to_mark))
+        cur.execute("SELECT EXISTS (SELECT * FROM '%s' WHERE season = '%s' AND episode_watched = 0)" % (current_IMDB_id, chosen_season))
         not_seen_episodes_exists = cur.fetchone()[0]
         # Marking episodes as seen
         if not_seen_episodes_exists == 1:
-            print(template.information.format("Marking season %s as watched" % season_to_mark))
-            cur.execute("UPDATE %s SET episode_watched = 1 WHERE season = '%s'" % (current_IMDB_id, season_to_mark))
+            print(template.information.format("Marking season %s as watched" % chosen_season))
+            cur.execute("UPDATE %s SET episode_watched = 1 WHERE season = '%s'" % (current_IMDB_id, chosen_season))
             con.commit()
-            print(template.information.format("All episodes in season %s marked as watched" % season_to_mark)) 
+            print(template.information.format("All episodes in season %s marked as watched" % chosen_season)) 
         # Notifing User that all episodes in chosen season are marked as seen.
         else:
-            print(template.information.format("All episdes in season %s are already marked as seen" % season_to_mark))
+            print(template.information.format("All episdes in season %s are already marked as seen" % chosen_season))
 
         template.empty.format(" ")
         print(template.seperator)
 
     # Marks season as not watched.
-    def mark_season_as_not_watched(self, current_IMDB_id):
+    def mark_season_as_not_watched(self, current_IMDB_id, chosen_season):
         # Printing available seasons to choose from
-        show_details.current_IMDB_id = current_IMDB_id
-        show_details.generate_self_variables()
-        show_details.choose_single_season()
-        season_to_mark = input()
         template.empty.format(" ")
         
         # Setting season to empty if user chose "None" season.
-        if season_to_mark == "0":
-            season_to_mark = ""
+        if chosen_season == 0:
+            chosen_season = ""
 
         # Checking if there are apisodes that are not seen.
-        cur.execute("SELECT EXISTS (SELECT * FROM '%s' WHERE season = '%s' AND episode_watched = 1)" % (current_IMDB_id, season_to_mark))
+        cur.execute("SELECT EXISTS (SELECT * FROM '%s' WHERE season = '%s' AND episode_watched = 1)" % (current_IMDB_id, chosen_season))
         seen_episodes_exists = cur.fetchone()[0]
         # Marking episodes as seen
         if seen_episodes_exists == 1:
-            print(template.information.format("Marking season %s as watched" % season_to_mark))
-            cur.execute("UPDATE %s SET episode_watched = 0 WHERE season = '%s'" % (current_IMDB_id, season_to_mark))
+            print(template.information.format("Marking season %s as watched" % chosen_season))
+            cur.execute("UPDATE %s SET episode_watched = 0 WHERE season = '%s'" % (current_IMDB_id, chosen_season))
             con.commit()
-            print(template.information.format("All episodes in season %s marked as not watched" % season_to_mark)) 
+            print(template.information.format("All episodes in season %s marked as not watched" % chosen_season)) 
         # Notifing User that all episodes in chosen season are marked as seen.
         else:
-            print(template.information.format("All episdes in seaon %s are already marked as not seen" % season_to_mark))
+            print(template.information.format("All episdes in season %s are already marked as not seen" % chosen_season))
 
         template.empty.format(" ")
         print(template.seperator)

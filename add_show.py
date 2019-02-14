@@ -36,7 +36,7 @@ cur = con.cursor()
 
 # Creating the database "shows" if it doesn't exist.
 cur.execute('''CREATE TABLE IF NOT EXISTS shows
-    (IMDB_id TEXT NOT NULL PRIMARY KEY, title TEXT NOT NULL, image TEXT NOT NULL, synopsis TEXT NOT NULL, seasons INTEGER NOT NULL, genres TEXT NOT NULL, running_time INTEGER NOT NULL, finished_airing INTEGER NOT NULL, years_aired TEXT NOT NULL, finished_watching INTEGER NOT NULL)''')
+    (IMDB_id TEXT NOT NULL PRIMARY KEY, title TEXT NOT NULL, image TEXT NOT NULL, synopsis TEXT NOT NULL, seasons INTEGER NOT NULL, genres TEXT NOT NULL, running_time INTEGER NOT NULL, finished_airing INTEGER NOT NULL, years_aired TEXT NOT NULL, finished_watching INTEGER NOT NULL, unknown_season INTEGER NOT NULL)''')
 
 # Setting variable name for the imdbpie.
 imdb = Imdb()
@@ -75,32 +75,6 @@ class AddShow:
             print(template.information.format("Will be adding the show"))
             self.add_show()
 
-#     # THIS FUNCTION NO LONGER NEEDED. KEEPING JUST IN CASE.
-#     # This fucntion asks User if he has finished watching the show. User will be prompted only if series have finneshed airing. It is determend by checking if IMDB page has two dates near shows name. Depending on User's response program will add 0 or 1 to finished_watching field. 0 means that user haven't finnished watching show, while 1 means he did.
-#     def ask_if_finished_watching(self):
-#         print(template.request_response.format("Have you finished watching the show? yes (y) / no (n)"))
-#         ask1 = input()
-#         if ask1.lower() == "yes" or ask1.lower() == "y":
-#             self.finished_watching = 1
-#         elif ask1.lower() == "no" or ask1.lower() == "n":
-#             self.finished_watching = 0
-#         else:
-#             print(template.request_response.format("Please type yes/y or no/n"))
-#             self.ask_if_finished_watching()
-# 
-#     # THIS FUNCTION NO LONGER NEEDED. KEEPING JUST IN CASE.
-#     # This funktion asks User if he is current watching this show or it wants to add the show as "Plan to watch". If user is currently watching show 1 will be added to field finneshed_watching, while 2 will be added if user plans to watch the series.
-#     def ask_if_currently_watching(self):
-#         print(template.request_response.format("Are you watching this show currently? yes(y) / no (n). If you choose <no> show will be added to plan to watch list."))
-#         ask2 = input()
-#         if ask2.lower() == "yes" or ask2.lower() == "y":
-#             self.finished_watching = 0
-#         elif ask2.lower() == "no" or ask2.lower() == "n":
-#             self.finished_watching = 2
-#         else:
-#             print(template.request_response.format("Please type yes/y or no/n"))
-#             self.ask_if_finished_watching()
-    
     def add_show(self):
         # Getting title of the show using imdbpie.
         title = imdb.get_title_auxiliary(self.IMDB_id)
@@ -190,6 +164,10 @@ class AddShow:
             if season == None:
                 # This has a lot of errors and most likely holds episodes for upcoming seasons
                 print(template.information.format("Adding season 'Unknown' to the database"))
+
+                # Marks show that it has a "Unknown" season in shows table.
+                cur.execute("UPDATE shows SET unknown_season = 1 WHERE IMDB_id='%'" % self.IMDB_id)
+
                 current_season = imdb.get_title_episodes_detailed(self.IMDB_id, len(self.show_seasons))
                 for episodes in current_season['episodes']:
                     # Had to add this if statement, because I added new state for the series, that other functions do not recognized this status of the episode.
