@@ -389,7 +389,9 @@ class SeriesTracker:
             chosen_season = show_details.choose_single_season(self.current_full_seasons, self.current_unknown_season)
             manage_database.mark_season_as_watched(self.current_IMDB_id, chosen_season)
         elif chosen_option == "2":
-            manage_database.mark_episode_as_watched(self.current_IMDB_id)
+            print(template.request_response.format("Type episodes id (sXXeXX) or season and episode number (XXX)."))
+            chosen_episode = input()
+            manage_database.mark_episode_as_watched(self.current_IMDB_id, chosen_episode)
         elif chosen_option == "3":
             manage_database.mark_up_to_episode(self.current_IMDB_id)
         elif chosen_option == "4":

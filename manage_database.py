@@ -83,9 +83,7 @@ class ManageDatabase:
                 template.empty.format(" ")
                 print(template.seperator)
 
-    def mark_episode_as_watched(self, current_IMDB_id):
-        print(template.request_response.format("Type episodes id (sXXeXX), season and episode number (XXX) or episode IMDB id."))
-        chosen_episode = input()
+    def mark_episode_as_watched(self, current_IMDB_id, chosen_episode):
         
         # Checking if user input is an IMDB_id. If it is - marks episode based on this id.
         if validate.check_if_input_contains_IMDB_id(chosen_episode):
