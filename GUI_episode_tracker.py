@@ -36,7 +36,7 @@ class mainWindow(QMainWindow):
         self.top = 200
         self.left = 500
         self.height = 700
-        self.width = 1000
+        self.width = 1200
         self.initUI()
 
     def initUI(self):
@@ -88,7 +88,6 @@ class TabWidget(QWidget):
         latest_episodes.create_label()
         latest_episodes.create_table()
         latest_episodes.fill_episode_table()
-
         
         # Setting up Next Episodes table
         next_episodes = CreateEpisodeTables()
@@ -120,6 +119,7 @@ class TabWidget(QWidget):
         shows_table.create_table()
         shows_table.create_filter_box()
         shows_table.fill_table()
+
 
         self.tab2.layout.addWidget(shows_table.button_box)
         self.tab2.layout.addWidget(shows_table.filter_box)
@@ -243,7 +243,7 @@ class CreateEpisodeTables:
                 rowCount += 1
 
 
-        self.episode_table.cellClicked.connect(self.selected_show)
+        self.episode_table.cellDoubleClicked.connect(self.selected_show)
 
 class CreateShowTables:
 
@@ -307,7 +307,7 @@ class CreateShowTables:
         # This intermediate model allows to filter show table
         self.filter_model = QSortFilterProxyModel()
         self.filter_model.setSourceModel(self.table_model)
-        self.filter_model.setFilterKeyColumn(0) # Setting target of the filter function
+        self.filter_model.setFilterKeyColumn(0) # Setting target column of the filter function. It can be changed to -1 to from all columns.
         self.filter_model.setFilterCaseSensitivity(Qt.CaseInsensitive) # Making filter regex not case sensitive
 
         # TableView model that actually displays show table
@@ -319,6 +319,7 @@ class CreateShowTables:
         self.shows_table.setColumnWidth(2, 110)
         self.shows_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.shows_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
+
 
     def fill_table(self):
         
@@ -344,13 +345,30 @@ class CreateShowTables:
             self.table_model.setItem(row_count, 3, QStandardItem(selected.value("years_aired")))
             self.table_model.setItem(row_count, 4, QStandardItem(selected.value("synopsis")))
             
-
             row_count += 1
+
+        self.shows_table.doubleClicked.connect(self.open_show)
         
     def refill_table(self, new_query):
         self.sql_query = new_query
         self.table_model.setRowCount(0)
+
+        self.shows_table.doubleClicked.disconnect(self.open_show)
+
         self.fill_table()
+
+    def open_show(self, pos):
+        # Clicking action is done on the show_table, but data actually has to be fetched from QSortFilterProxyModel.
+        # For this reason you have to get index of item in filter_model using special index function.
+        # Lastly use this index in data() function on filter_model to retrieve information from cell that you/user actually see.
+        index = self.filter_model.index(pos.row(), 0)
+        print(self.filter_model.data(index))
+        # print(self.table_model.item(index.row(), 0).text())
+
+
+class OpenShowWindow:
+    
+   pass 
  
 if __name__ == "__main__":
     app = QApplication(sys.argv)
