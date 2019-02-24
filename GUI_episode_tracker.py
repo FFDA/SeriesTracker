@@ -46,6 +46,7 @@ class mainWindow(QMainWindow):
         self.setCentralWidget(self.tab_widget)
         self.show()
 
+
 class TabWidget(QWidget):
     
     def __init__(self, parent):
@@ -57,14 +58,10 @@ class TabWidget(QWidget):
         self.tabs = QTabWidget()
         self.tab1 = QWidget()
         self.tab2 = QWidget()
-        self.tab3 = QWidget()
-#         self.tab4 = QWidget()
 
         # Adding tabs to the tabs (QTabWidget) widget and setttig names for it.
         self.tabs.addTab(self.tab1, "Recent Episodes")
         self.tabs.addTab(self.tab2, "Shows")
-#         self.tabs.addTab(self.tab3, "Plan To Watch")
-#         self.tabs.addTab(self.tab4, "Finished Watching")
         
         # Telling to look for a function that will set information in the widget.
         self.tab1UI()
@@ -90,20 +87,21 @@ class TabWidget(QWidget):
         latest_episodes.fill_episode_table()
         
         # Setting up Next Episodes table
-        next_episodes = CreateEpisodeTables()
-        next_episodes.label_text = "Upcoming Episodes"
-        next_episodes.sql_select_shows = "SELECT * FROM shows WHERE finished_watching = 0"
-        next_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE LENGTH(air_date) > 4 AND air_date > '%s' ORDER BY air_date DESC"
-        next_episodes.create_label()
-        next_episodes.create_table()
-        next_episodes.fill_episode_table()
+#         next_episodes = CreateEpisodeTables()
+#         next_episodes.label_text = "Upcoming Episodes"
+#         next_episodes.sql_select_shows = "SELECT * FROM shows WHERE finished_watching = 0"
+#         next_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE LENGTH(air_date) > 4 AND air_date > '%s' ORDER BY air_date DESC"
+#         # next_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE episode_watched = 0"
+#         next_episodes.create_label()
+#         next_episodes.create_table()
+#         next_episodes.fill_episode_table()
         
         # Adding label to the tab1 layout
         self.tab1.layout.addWidget(latest_episodes.episode_table_label)
         # Adding table to the tab1 layout
         self.tab1.layout.addWidget(latest_episodes.episode_table)
-        self.tab1.layout.addWidget(next_episodes.episode_table_label)
-        self.tab1.layout.addWidget(next_episodes.episode_table)
+#         self.tab1.layout.addWidget(next_episodes.episode_table_label)
+#         self.tab1.layout.addWidget(next_episodes.episode_table)
         # Adding setting tab1 laytout
         self.tab1.setLayout(self.tab1.layout)
 
@@ -135,8 +133,6 @@ class CreateEpisodeTables:
     def __init__(self):
         self.sql_select_shows = ""
         self.label_text = ""
-        self.table_column_count = 6
-        self.table_horizontal_header_labels = ["", "Title", "Episode", "Airdate", "Episode Title", ""]
         self.sql_filter_episodes = ""
     
     def create_label(self):
@@ -147,103 +143,98 @@ class CreateEpisodeTables:
         self.episode_table_label.setAlignment(Qt.AlignHCenter)
 
     def create_table(self):
-        # Initiating Table
-        self.episode_table = QTableWidget()
-        # Removing vertincal headers for rows (removing numbering)
-        self.episode_table.verticalHeader().setVisible(False)
-        # Making tables to fit to the window
-        self.episode_table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
-        # Uncomment line bellow to select rows instead of single cells
-        # self.episode_table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        # Uncomment line bellow to select nothing
-        self.episode_table.setSelectionMode(QAbstractItemView.NoSelection)
-        # Making table not editable
-        self.episode_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        # lastEpisodes.setShowGrid(False)
-        # Setting 6 columns for the table
-        self.episode_table.setColumnCount(self.table_column_count)
-        # Setting lables for the columns 
-        self.episode_table.setHorizontalHeaderLabels(self.table_horizontal_header_labels)
-        # Setting different widths for different columns
+
+        self.table_model = QStandardItemModel()
+        self.table_model.setColumnCount(7)
+        self.table_model.setHorizontalHeaderLabels(["", "Title", "Episode", "AirDate", "Episode Title", ""])
+
+        self.episode_table = QTableView()
+        self.episode_table.setModel(self.table_model)
+        self.episode_table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents) # Adjust how much space table takes
+        self.episode_table.setEditTriggers(QAbstractItemView.NoEditTriggers) # Makes table not editable
+        self.episode_table.setSelectionBehavior(QAbstractItemView.SelectRows) # Clicking on cell selects row
+        self.episode_table.verticalHeader().setVisible(False) # Removing vertincal headers for rows (removing numbering)
+        self.episode_table.setSelectionMode(QAbstractItemView.NoSelection) # Makes not able to select cells or rows in table
+        self.episode_table.hideColumn(6) # Hidding last calumn that holds IMDB_id value
+        # self.episode_table.setShowGrid(False) # Removes grid
+        ### Setting custom widths for some columns ###
         self.episode_table.setColumnWidth(0, 30)
         self.episode_table.setColumnWidth(1, 340)
         self.episode_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
+
+        self.episode_table.doubleClicked.connect(self.selected_show)
+
 
     # Marks episode as watched and repopulates table with updated data.
     def mark_watched(self, IMDB_id, episode_IMDB_id):
         mark_episode = QtSql.QSqlQuery("UPDATE %s SET episode_watched = 1 WHERE episode_IMDB_id = '%s'" % (IMDB_id, episode_IMDB_id))
         mark_episode.exec_()
-        self.episode_table.setRowCount(0)
+        self.table_model.setRowCount(0)
         self.fill_episode_table()
 
+
     # Retrieves shows IMDB_id on which was clicked.
-    def selected_show(self, row, col):
-        show = QtSql.QSqlQuery("SELECT IMDB_id FROM shows WHERE title = '%s'" % self.episode_table.item(row, 1).text())
-        show.first()
-        print(show.value(0))
+    def selected_show(self, pos):
+        IMDB_id = self.table_model.data(self.table_model.index(pos.row(), 6))
+        print(IMDB_id)
+
 
     def fill_episode_table(self):
         # Setting variable to 0 because row count is unknown
-        rowCount = 0
+        row_count = 0
 
         # Selecting using provided query
         selected = QtSql.QSqlQuery(self.sql_select_shows)
 
-        # print(len(selected.result()))
-        
         # Iterating thought every quary result
         while selected.next():
-            
+
             # Selecting all episodes from show in the watchlist that has air_date longer than 4 digists and which has air_date beforte current date. Ordering results in descending order.
             episode = QtSql.QSqlQuery(self.sql_filter_episodes % (selected.value("IMDB_id"), self.current_year + "-" + self.current_month_day))
-            # Selecting first result in query.
-            if episode.last() == False:
-                pass
+            episode.last()
+
+            # Adding row to the table
+            self.table_model.insertRow(row_count)
+            # Getting value of shows episode_watched cell
+            episode_state = episode.value("episode_watched")
+            # Setting checkbox to checked or unchecked depending on episode beeing watched or not
+            mark_watched_button = QPushButton("Watched")
+            mark_watched_button.setFlat(True)
+    
+            show_watched = QStandardItem()
+            # Making Checkbox not editable
+            show_watched.setFlags(Qt.ItemIsEditable)
+    
+            # Setting background color for current row, checkbox's checkmark and setting "mark_watched" button status depending if episode is watched or not.
+            if episode_state == 1:
+                show_watched.setCheckState(Qt.Checked)
+                show_watched_color = QColor(200, 230, 255)
+                mark_watched_button.setEnabled(False)
             else:
-                # Adding row to the table
-                self.episode_table.insertRow(rowCount)
-                # Getting value of shows episode_watched cell
-                episode_state = episode.value("episode_watched")
-                # Setting checkbox to checked or unchecked depending on episode beeing watched or not
-                mark_watched_button = QPushButton("Watched")
-                mark_watched_button.setFlat(True)
+                show_watched.setCheckState(Qt.Unchecked)
+                show_watched_color = QColor(200, 255, 170)
     
-                show_watched = QTableWidgetItem()
-                # Making Checkbox not editable
-                show_watched.setFlags(Qt.ItemIsEditable)
+            # Setting background color to red if current_date is smaller than air_date of the episode.
+            if episode.value("air_date") > self.current_year + "-" + self.current_month_day:
+                show_watched_color = QColor(255, 170, 175)
     
-                # Setting background color for current row, checkbox's checkmark and setting "mark_watched" button status depending if episode is watched or not.
-                if episode_state == 1:
-                    show_watched.setCheckState(Qt.Checked)
-                    show_watched_color = QColor(200, 230, 255)
-                    mark_watched_button.setEnabled(False)
-                else:
-                    show_watched.setCheckState(Qt.Unchecked)
-                    show_watched_color = QColor(200, 255, 170)
-    
-                # Setting background color to red if current_date is smaller than air_date of the episode.
-                if episode.value("air_date") > self.current_year + "-" + self.current_month_day:
-                    show_watched_color = QColor(255, 170, 175)
-    
-                # Setting different values to different culumns of the row for the query result.
-                self.episode_table.setItem(rowCount, 0, show_watched)
-                self.episode_table.item(rowCount, 0).setBackground(show_watched_color)
-                self.episode_table.setItem(rowCount, 1, QTableWidgetItem(selected.value("title")))
-                self.episode_table.item(rowCount, 1).setBackground(show_watched_color)
-                self.episode_table.setItem(rowCount, 2, QTableWidgetItem(episode.value("episode_seasonal_id")))
-                self.episode_table.item(rowCount, 2).setBackground(show_watched_color)
-                self.episode_table.setItem(rowCount, 3, QTableWidgetItem(episode.value("air_date")))
-                self.episode_table.item(rowCount, 3).setBackground(show_watched_color)
-                self.episode_table.setItem(rowCount, 4, QTableWidgetItem(episode.value("episode_title")))
-                self.episode_table.item(rowCount, 4).setBackground(show_watched_color)
-                self.episode_table.setCellWidget(rowCount, 5, mark_watched_button)
-                mark_watched_button.clicked.connect(partial(self.mark_watched, selected.value("IMDB_id"), episode.value("episode_IMDB_id")))
-    
-                # Adding +1 to the row count
-                rowCount += 1
+            # Setting different values to different culumns of the row for the query result.
+            self.table_model.setItem(row_count, 0, show_watched)
+            self.table_model.item(row_count, 0).setBackground(show_watched_color)
+            self.table_model.setItem(row_count, 1, QStandardItem(selected.value("title")))
+            self.table_model.item(row_count, 1).setBackground(show_watched_color)
+            self.table_model.setItem(row_count, 2, QStandardItem(episode.value("episode_seasonal_id")))
+            self.table_model.item(row_count, 2).setBackground(show_watched_color)
+            self.table_model.setItem(row_count, 3, QStandardItem(episode.value("air_date")))
+            self.table_model.item(row_count, 3).setBackground(show_watched_color)
+            self.table_model.setItem(row_count, 4, QStandardItem(episode.value("episode_title")))
+            self.table_model.item(row_count, 4).setBackground(show_watched_color)
+            self.episode_table.setIndexWidget(self.table_model.index(row_count, 5), mark_watched_button)
+            mark_watched_button.clicked.connect(partial(self.mark_watched, selected.value("IMDB_id"), episode.value("episode_IMDB_id")))
+            self.table_model.setItem(row_count, 6, QStandardItem(selected.value("IMDB_id")))
 
+            row_count += 1
 
-        self.episode_table.cellDoubleClicked.connect(self.selected_show)
 
 class CreateShowTables:
 
@@ -295,13 +286,15 @@ class CreateShowTables:
         
         # Adding 
         self.filter_box = QLineEdit()
+        self.filter_box.setPlaceholderText("Start typing show's title")
+        # self.filter_box.setFocusPolicy(Qt.StrongFocus)
         self.filter_box.textChanged.connect(self.filter_model.setFilterRegExp)
 
     def create_table(self):
 
         # Making table model that has to be added to QTableView, but in this case it will be added as a source model for QSortFilterProxyModel to be able to filter results on the go.
         self.table_model = QStandardItemModel()
-        self.table_model.setColumnCount(5)
+        self.table_model.setColumnCount(6)
         self.table_model.setHorizontalHeaderLabels(self.horizontal_header_labels)
 
         # This intermediate model allows to filter show table
@@ -319,6 +312,7 @@ class CreateShowTables:
         self.shows_table.setColumnWidth(2, 110)
         self.shows_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.shows_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
+        self.shows_table.hideColumn(5) # Hides column that has IMDB_id in it.
 
 
     def fill_table(self):
@@ -344,6 +338,7 @@ class CreateShowTables:
             self.table_model.setItem(row_count, 2, QStandardItem(status))
             self.table_model.setItem(row_count, 3, QStandardItem(selected.value("years_aired")))
             self.table_model.setItem(row_count, 4, QStandardItem(selected.value("synopsis")))
+            self.table_model.setItem(row_count, 5, QStandardItem(selected.value("IMDB_id")))
             
             row_count += 1
 
@@ -361,9 +356,8 @@ class CreateShowTables:
         # Clicking action is done on the show_table, but data actually has to be fetched from QSortFilterProxyModel.
         # For this reason you have to get index of item in filter_model using special index function.
         # Lastly use this index in data() function on filter_model to retrieve information from cell that you/user actually see.
-        index = self.filter_model.index(pos.row(), 0)
+        index = self.filter_model.index(pos.row(), 5)
         print(self.filter_model.data(index))
-        # print(self.table_model.item(index.row(), 0).text())
 
 
 class OpenShowWindow:
