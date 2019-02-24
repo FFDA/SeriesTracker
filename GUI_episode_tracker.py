@@ -34,8 +34,8 @@ class mainWindow(QMainWindow):
         super().__init__()
 
         self.top = 200
-        self.left = 500
-        self.height = 700
+        self.left = 400
+        self.height = 800
         self.width = 1200
         self.initUI()
 
@@ -78,30 +78,30 @@ class TabWidget(QWidget):
         self.tab1.layout = QVBoxLayout()
         
         # Setting up Latest Episodes table
-        latest_episodes = CreateEpisodeTables()
+        latest_episodes = CreateEpisodesTable()
         latest_episodes.label_text = "Latest Episodes"
-        latest_episodes.sql_select_shows = "SELECT * FROM shows WHERE finished_watching = 0"
+        latest_episodes.sql_select_shows = "SELECT * FROM shows WHERE finished_watching = 0 ORDER BY title DESC"
         latest_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE LENGTH(air_date) > 4 AND air_date < '%s' ORDER BY air_date ASC"
         latest_episodes.create_label()
         latest_episodes.create_table()
         latest_episodes.fill_episode_table()
         
         # Setting up Next Episodes table
-#         next_episodes = CreateEpisodeTables()
-#         next_episodes.label_text = "Upcoming Episodes"
-#         next_episodes.sql_select_shows = "SELECT * FROM shows WHERE finished_watching = 0"
-#         next_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE LENGTH(air_date) > 4 AND air_date > '%s' ORDER BY air_date DESC"
-#         # next_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE episode_watched = 0"
-#         next_episodes.create_label()
-#         next_episodes.create_table()
-#         next_episodes.fill_episode_table()
+        next_episodes = CreateUpcomingEpisodesTable()
+        next_episodes.label_text = "Upcoming Episodes"
+        next_episodes.sql_select_shows = "SELECT * FROM shows WHERE finished_watching = 0 ORDER BY title DESC"
+        next_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE LENGTH(air_date) > 4 AND air_date >= '%s' ORDER BY air_date ASC"
+        # next_episodes.sql_filter_episodes = "select * from %s where episode_watched = 0 and air_date > '%s' or air_date is null or length(air_date) < 8"
+        next_episodes.create_label()
+        next_episodes.create_table()
+        next_episodes.fill_episode_table()
         
         # Adding label to the tab1 layout
         self.tab1.layout.addWidget(latest_episodes.episode_table_label)
         # Adding table to the tab1 layout
         self.tab1.layout.addWidget(latest_episodes.episode_table)
-#         self.tab1.layout.addWidget(next_episodes.episode_table_label)
-#         self.tab1.layout.addWidget(next_episodes.episode_table)
+        self.tab1.layout.addWidget(next_episodes.episode_table_label)
+        self.tab1.layout.addWidget(next_episodes.episode_table)
         # Adding setting tab1 laytout
         self.tab1.setLayout(self.tab1.layout)
 
@@ -124,7 +124,7 @@ class TabWidget(QWidget):
         self.tab2.layout.addWidget(shows_table.shows_table)
         self.tab2.setLayout(self.tab2.layout)
 
-class CreateEpisodeTables:
+class CreateEpisodesTable:
 
     # Variable with current date for to compare episode's air_date later
     current_year = datetime.datetime.today().strftime("%Y")
@@ -192,6 +192,11 @@ class CreateEpisodeTables:
             # Selecting all episodes from show in the watchlist that has air_date longer than 4 digists and which has air_date beforte current date. Ordering results in descending order.
             episode = QtSql.QSqlQuery(self.sql_filter_episodes % (selected.value("IMDB_id"), self.current_year + "-" + self.current_month_day))
             episode.last()
+            self.insert_table_row(row_count, episode, selected.value("IMDB_id"), selected.value("title"))
+
+        row_count =+ 1
+
+    def insert_table_row(self, row_count, episode, IMDB_id, title):
 
             # Adding row to the table
             self.table_model.insertRow(row_count)
@@ -221,7 +226,7 @@ class CreateEpisodeTables:
             # Setting different values to different culumns of the row for the query result.
             self.table_model.setItem(row_count, 0, show_watched)
             self.table_model.item(row_count, 0).setBackground(show_watched_color)
-            self.table_model.setItem(row_count, 1, QStandardItem(selected.value("title")))
+            self.table_model.setItem(row_count, 1, QStandardItem(title))
             self.table_model.item(row_count, 1).setBackground(show_watched_color)
             self.table_model.setItem(row_count, 2, QStandardItem(episode.value("episode_seasonal_id")))
             self.table_model.item(row_count, 2).setBackground(show_watched_color)
@@ -230,10 +235,76 @@ class CreateEpisodeTables:
             self.table_model.setItem(row_count, 4, QStandardItem(episode.value("episode_title")))
             self.table_model.item(row_count, 4).setBackground(show_watched_color)
             self.episode_table.setIndexWidget(self.table_model.index(row_count, 5), mark_watched_button)
-            mark_watched_button.clicked.connect(partial(self.mark_watched, selected.value("IMDB_id"), episode.value("episode_IMDB_id")))
-            self.table_model.setItem(row_count, 6, QStandardItem(selected.value("IMDB_id")))
+            mark_watched_button.clicked.connect(partial(self.mark_watched, IMDB_id, episode.value("episode_IMDB_id")))
+            self.table_model.setItem(row_count, 6, QStandardItem(IMDB_id))
 
-            row_count += 1
+
+class CreateUpcomingEpisodesTable(CreateEpisodesTable):
+
+    def fill_episode_table(self):
+        # Setting variable to 0 because row count is unknown
+        row_count = 0
+
+        # Selecting using provided query
+        selected = QtSql.QSqlQuery(self.sql_select_shows)
+
+        # Iterating thought every quary result
+        while selected.next():
+
+            # Selecting all episodes from show in the watchlist that has air_date longer than 4 digists and which has air_date beforte current date. Ordering results in descending order.
+            episode = QtSql.QSqlQuery(self.sql_filter_episodes % (selected.value("IMDB_id"), self.current_year + "-" + self.current_month_day))
+            if episode.first() == True:
+                self.insert_table_row(row_count, episode, selected.value("IMDB_id"), selected.value("title"))
+            else:
+                episode = QtSql.QSqlQuery("select * from %s where episode_watched = 0 and (air_date is null or length(air_date) < 8)" % selected.value("IMDB_id"))
+                if episode.first() == True:
+                    self.insert_table_row(row_count, episode, selected.value("IMDB_id"), selected.value("title"))
+                else:
+                  pass
+
+        row_count += 1
+
+    def insert_table_row(self, row_count, episode, IMDB_id, title):
+        # Adding row to the table
+        self.table_model.insertRow(row_count)
+        # Getting value of shows episode_watched cell
+        episode_state = episode.value("episode_watched")
+        # Setting checkbox to checked or unchecked depending on episode beeing watched or not
+        mark_watched_button = QPushButton("Watched")
+        mark_watched_button.setFlat(True)
+
+        show_watched = QStandardItem()
+        # Making Checkbox not editable
+        show_watched.setFlags(Qt.ItemIsEditable)
+ 
+        # Setting background color for current row, checkbox's checkmark and setting "mark_watched" button status depending if episode is watched or not.
+        if episode_state == 1:
+            show_watched.setCheckState(Qt.Checked)
+            show_watched_color = QColor(200, 230, 255)
+            mark_watched_button.setEnabled(False)
+        else:
+            show_watched.setCheckState(Qt.Unchecked)
+            show_watched_color = QColor(200, 255, 170)
+ 
+        # Setting background color to red if current_date is smaller than air_date of the episode.
+#           if episode.value("air_date") > self.current_year + "-" + self.current_month_day:
+#               show_watched_color = QColor(255, 170, 175)
+
+        # Setting different values to different culumns of the row for the query result.
+        self.table_model.setItem(row_count, 0, show_watched)
+        self.table_model.item(row_count, 0).setBackground(show_watched_color)
+        self.table_model.setItem(row_count, 1, QStandardItem(title))
+        self.table_model.item(row_count, 1).setBackground(show_watched_color)
+        self.table_model.setItem(row_count, 2, QStandardItem(episode.value("episode_seasonal_id")))
+        self.table_model.item(row_count, 2).setBackground(show_watched_color)
+        self.table_model.setItem(row_count, 3, QStandardItem(episode.value("air_date")))
+        self.table_model.item(row_count, 3).setBackground(show_watched_color)
+        self.table_model.setItem(row_count, 4, QStandardItem(episode.value("episode_title")))
+        self.table_model.item(row_count, 4).setBackground(show_watched_color)
+        self.episode_table.setIndexWidget(self.table_model.index(row_count, 5), mark_watched_button)
+        mark_watched_button.clicked.connect(partial(self.mark_watched, IMDB_id, episode.value("episode_IMDB_id")))
+        self.table_model.setItem(row_count, 6, QStandardItem(IMDB_id))
+
 
 
 class CreateShowTables:
