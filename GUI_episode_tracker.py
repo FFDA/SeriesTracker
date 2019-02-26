@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import *
 import sys
 from PyQt5.QtGui import *
 import datetime
+import webbrowser
 import sqlite3
 import os
 from functools import partial
@@ -365,7 +366,7 @@ class CreateShowTables:
 
     def create_filter_box(self):
         
-        # Adding 
+        # Adding search/filter box
         self.filter_box = QLineEdit()
         self.filter_box.setPlaceholderText("Start typing show's title")
         # self.filter_box.setFocusPolicy(Qt.StrongFocus)
@@ -441,8 +442,10 @@ class CreateShowTables:
 
 class CreateShowEpisodesTable(CreateEpisodesTable):
 
-    def __init__(self, IMDB_id):
+    def __init__(self, IMDB_id, seasons, unknown_season):
         self.IMDB_id = IMDB_id
+        self.seasons = seasons
+        self.unknown_season = unknown_season
         self.sql_select_shows = ""
         self.table_column_count = 5
         self.horizontal_header_labels = ["", "Episode ID", "Air Date", "Episode Title", ""]
@@ -453,6 +456,7 @@ class CreateShowEpisodesTable(CreateEpisodesTable):
         self.table_model = QStandardItemModel()
         self.table_model.setColumnCount(self.table_column_count)
         self.table_model.setHorizontalHeaderLabels(self.horizontal_header_labels)
+        self.table_model.sort(1, Qt.AscendingOrder)
 
         self.episode_table = QTableView()
         self.episode_table.setModel(self.table_model)
@@ -469,15 +473,66 @@ class CreateShowEpisodesTable(CreateEpisodesTable):
         self.episode_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Stretch)
 
     def fill_episode_table(self):
-        row_count = 0
+        # This function fill episode table using query provided in self.sql_select_shows.
 
+        row_count = 0
         episodes = QtSql.QSqlQuery(self.sql_select_shows)
 
         while episodes.next():
 
             self.insert_table_row(row_count, episodes, self.IMDB_id)
+            row_count =+ 1
 
-        row_count =+ 1
+        self.episode_table.sortByColumn(1, Qt.AscendingOrder)
+
+    def create_buttons(self):
+        
+        self.button_box = QGroupBox()
+        self.button_box.layout = QHBoxLayout()
+
+        # Season list that contains all season numbers in string form that will be used later on to populate drop down menu for user to choose a season from.
+        # First value has "All" that prints all show's seasons.
+        # If show has "Unknown" season list will have an option to choose it too.
+        season_list = ["All"]
+
+        # Appends all seasons in string from to season_list
+        for i in range(self.seasons):
+            season_list.append(str(i + 1))
+
+        # Appends "Unknown" to the end of the list if there is an unknown season.
+        if self.unknown_season == 1:
+            season_list.append("Unknown")
+
+        season_button = QComboBox()
+        season_button.setMinimumSize(95, 31)
+        season_button.insertItems(0, season_list) # Adding all the options from season_list to the drop down menu
+        season_button.currentTextChanged.connect(self.print_season) # Detects if user chooses different season and send value to print_season function
+        
+        season_button_label = QLabel("Season")
+
+        # Button that opens show's IMDB page
+        open_webpage = QPushButton("Open IMDB page")
+        open_webpage.clicked.connect(self.open_imdb_page)
+        open_webpage.setMinimumSize(150, 31)
+
+        # Other buttons to manage database.
+        mark_as_button = QPushButton("Mark ...")
+        mark_as_button.setMinimumSize(150, 31)
+        update_button = QPushButton("Update ...")
+        update_button.setMinimumSize(150, 31)
+        fix_season = QPushButton("Fix Season")
+        fix_season.setMinimumSize(150, 31)
+
+        self.button_box.layout.addWidget(season_button_label)
+        self.button_box.layout.addWidget(season_button)
+        self.button_box.layout.insertStretch(2)
+        self.button_box.layout.addWidget(mark_as_button)
+        self.button_box.layout.addWidget(update_button)
+        self.button_box.layout.addWidget(fix_season)
+        self.button_box.layout.addWidget(open_webpage)
+
+        self.button_box.setLayout(self.button_box.layout)
+
 
     def insert_table_row(self, row_count, episode, IMDB_id):
 
@@ -519,6 +574,27 @@ class CreateShowEpisodesTable(CreateEpisodesTable):
         self.episode_table.setIndexWidget(self.table_model.index(row_count, 4), mark_watched_button)
         mark_watched_button.clicked.connect(partial(self.mark_watched, self.IMDB_id, episode.value("episode_IMDB_id")))
 
+    def print_season(self, season):
+        # This function set new SQL query to fetch episodes from the database. 
+        # Query is set after getting a signal from dropdown menu in create_buttons() function.
+        # It resets table row count to 0 (removes data from table) and initiates fill_episode_table() function.
+
+        if season == "All":
+            self.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
+        elif season == "Unknown":
+            self.sql_select_shows = "SELECT * FROM %s WHERE season = ''" % self.IMDB_id
+        else:
+            self.sql_select_shows = "SELECT * FROM %s WHERE season = '%s'" % (self.IMDB_id, season)
+
+        self.table_model.setRowCount(0)
+        self.fill_episode_table()
+
+    def open_imdb_page(self):
+        # This function opens shows Webpage
+        imdb_url = "https://www.imdb.com/title/" + self.IMDB_id
+        webbrowser.open(imdb_url, new=2, autoraise=True)
+
+
 class OpenShowWindow(QWidget):
     
     def __init__(self, IMDB_id):
@@ -527,6 +603,7 @@ class OpenShowWindow(QWidget):
         self.fetch_show_info()
 
     def fetch_show_info(self):
+        # Fetching data about show and seving them as variables to send to other functions/classes later.
         show_info = QtSql.QSqlQuery("SELECT * FROM shows WHERE IMDB_id = '%s'" % self.IMDB_id)
         show_info.first()
         self.title = show_info.value("title")
@@ -540,40 +617,52 @@ class OpenShowWindow(QWidget):
         self.unknown_season = show_info.value("unknown_season")
 
     def initUI(self):
+        # Initiating Show Window
         self.setGeometry(settings.value("top"), settings.value("left"), settings.value("width"), settings.value("height"))
+        self.setMinimumSize(settings.value("width"), settings.value("height"))
         self.setWindowTitle(self.title)
-        self.setWindowModality(Qt.ApplicationModal)
+        self.setWindowModality(Qt.ApplicationModal) # This function disables other windowsm untill user closes Show Window
 
         self.layout = QVBoxLayout()
         
         self.make_show_info_box()
-        episodes_table = CreateShowEpisodesTable(self.IMDB_id)
+        episodes_table = CreateShowEpisodesTable(self.IMDB_id, self.seasons, self.unknown_season) # Initiating episode table
 
         episodes_table.create_table()
-        episodes_table.sql_select_shows = "SELECT * FROM %s ORDER BY episode_seasonal_id DESC" % self.IMDB_id
+        episodes_table.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
+        episodes_table.create_buttons()
         episodes_table.fill_episode_table()
- 
+
         self.layout.addWidget(self.show_info_box)
+        self.layout.addWidget(episodes_table.button_box)
         self.layout.addWidget(episodes_table.episode_table)
         self.setLayout(self.layout)
         self.show()
  
     def make_show_info_box(self):
         
+        # Creating group box where Show Info and Poster will be placed.
         self.show_info_box = QGroupBox()
-        self.show_info_box.layout = QVBoxLayout()
-        
-        font_title = QFont()
+        self.show_info_box.layout = QGridLayout()
+
+        image_box = QLabel() # Poster placeholder
+        image_box.setMinimumSize(200, 300)
+        info_box = QGroupBox() # Group box containing Show's info
+        info_box.layout = QVBoxLayout()
+        info_box.setMinimumSize(700, 300)
+         
+        font_title = QFont() # Font size for title
         font_title.setPointSize(20)
 
-        font_other = QFont()
+        font_other = QFont() # Font size for other objects
         font_other.setPointSize(14)
 
-        font_synopsis = QFont()
+        font_synopsis = QFont() # Font size for synopsis
         font_synopsis.setPointSize(12)
         
         title = QLabel(self.title)
         title.setFont(font_title)
+        title.setAlignment(Qt.AlignHCenter)
 
         years_aired = QLabel("Years aired: " + self.years_aired)
         years_aired.setFont(font_other)
@@ -584,12 +673,15 @@ class OpenShowWindow(QWidget):
         seasons = QLabel(str(self.seasons) + " season(s)")
         seasons.setFont(font_other)
 
+        # This function retrieves number of episodes that are marked as watched.
         watched_episode_count = QtSql.QSqlQuery("SELECT COUNT(*) FROM %s WHERE episode_watched =1" % self.IMDB_id)
         watched_episode_count.first()
 
+        # Calculates and add to label how much minutes user spent watching show
         watched_time = QLabel("You watched this show for %d minutes (%s hours/%s days)" % (watched_episode_count.value(0) * self.running_time, str(round(watched_episode_count.value(0) * self.running_time/60, 1)), str(round(watched_episode_count.value(0) * self.running_time/1440, 1))))
         watched_time.setFont(font_other)
 
+        # Set's text for label that prints name of the list show is in
         if self.finished_watching == 0:
             current_list = "Currently in Watchlist"
         elif self.finished_watching == 1:
@@ -601,16 +693,21 @@ class OpenShowWindow(QWidget):
         in_list.setFont(font_other)
 
         synopsis = QLabel(self.synopsis)
+        synopsis.setWordWrap(True)
         synopsis.setFont(font_synopsis)
         
-        self.show_info_box.layout.addWidget(title)
-        self.show_info_box.layout.addWidget(years_aired)
-        self.show_info_box.layout.addWidget(running_time)
-        self.show_info_box.layout.addWidget(seasons)
-        self.show_info_box.layout.addWidget(watched_time)
-        self.show_info_box.layout.addWidget(in_list)
-        self.show_info_box.layout.addWidget(synopsis)
+        info_box.layout.addWidget(title)
+        info_box.layout.addWidget(years_aired)
+        info_box.layout.addWidget(running_time)
+        info_box.layout.addWidget(seasons)
+        info_box.layout.addWidget(watched_time)
+        info_box.layout.addWidget(in_list)
+        info_box.layout.addWidget(synopsis)
 
+        info_box.setLayout(info_box.layout)
+
+        self.show_info_box.layout.addWidget(image_box, 0, 0)
+        self.show_info_box.layout.addWidget(info_box, 0, 1, 1, 3)
         self.show_info_box.setLayout(self.show_info_box.layout)
  
 if __name__ == "__main__":
