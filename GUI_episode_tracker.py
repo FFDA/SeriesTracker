@@ -589,6 +589,7 @@ class OpenMarkAsNotWatched(QWidget):
 		self.title = title
 		self.seasons = seasons
 		self.unknown_season = unknown_season
+		self.setAttribute(Qt.WA_DeleteOnClose)
 		
 	def initUI(self):
 		self.setGeometry(settings.value("top"), settings.value("left"), settings.value("width"), settings.value("height"))
@@ -802,10 +803,10 @@ class OpenShowWindow(QWidget):
 				
 		# Creates button menu for "Mark ..." button
 		mark_as_button_menu = QMenu()
-		mark_as_button_menu.addAction("episode as not watched", self.open_mark_as_not_watched)
-		mark_as_button_menu.addAction("season as not watched")
+		mark_as_button_menu.addAction("episode as not watched", self.open_mark_episode_as_not_watched)
+		mark_as_button_menu.addAction("season as not watched", self.open_mark_season_as_not_watched)
 		mark_as_button_menu.addAction("up to episode as watched")
-		mark_as_button_menu.addAction("season as watched")
+		mark_as_button_menu.addAction("season as watched", self.open_mark_season_as_watched)
 				
 		# Creates button menu for "Update ..." button
 		update_button_menu = QMenu()
@@ -851,9 +852,133 @@ class OpenShowWindow(QWidget):
 
 		self.episodes_table.refill_episode_table()
 
-	def open_mark_as_not_watched(self):
-		self.open_mark_as_not_watched_window = OpenMarkAsNotWatched(self.IMDB_id, self.title, self.seasons, self.unknown_season)
-		self.open_mark_as_not_watched_window.initUI()
+	def open_mark_episode_as_not_watched(self):
+		self.open_mark_episode_as_not_watched_window = OpenMarkAsNotWatched(self.IMDB_id, self.title, self.seasons, self.unknown_season)
+		self.open_mark_episode_as_not_watched_window.initUI()
+		self.open_mark_episode_as_not_watched_window.destroyed.connect(self.episodes_table.refill_episode_table)
+		
+	def open_mark_season_as_not_watched(self):
+		self.open_mark_season_as_not_watched_window = MarkSeasonAsNotWatched(self.IMDB_id, self.seasons, self.unknown_season)
+		result = self.open_mark_season_as_not_watched_window.exec_()
+		
+		if result == QDialog.Accepted:
+			self.refill_episode_table()
+		
+	def open_mark_season_as_watched(self):
+		self.open_mark_season_as_watched_window = MarkSeasonAsWatched(self.IMDB_id, self.seasons, self.unknown_season)
+		result = self.open_mark_season_as_watched_window.exec_()
+		
+		if result == QDialog.Accepted:
+			self.refill_episode_table()
+	
+	def refill_episode_table(self):
+		self.episodes_table.refill_episode_table()
+		
+class MarkSeasonAsNotWatched(QDialog):
+	
+	def __init__(self, IMDB_id, seasons, unknown_season):
+		super(QWidgit, self).__init__()
+		self.IMDB_id = IMDB_id
+		self.seasons = seasons
+		self.unknown_season = unknown_season
+		self.window_title = "Choose season to mark as not watched"
+		self.message_text = "Mark season %s as not watched"
+		self.sql_season_mark = ""
+		self.initUI()
+
+	def initUI(self):
+		self.setGeometry(400, 600, 600, 400)
+		self.setWindowTitle(self.window_title)
+		self.setModal(True)
+		
+		self.layout = QVBoxLayout()
+		self.create_buttons()
+		self.message = QLabel("You haven't selected a season")
+		self.create_confirmation_buttons()
+		
+		self.layout.addWidget(self.button_box)
+		self.layout.addWidget(self.message)
+		self.layout.addWidget(self.confirmation_button_box)
+		self.setLayout(self.layout)
+	
+	def message_box_text(self, season):
+		if season != "":
+			self.message.setText(self.message_text % season)
+			self.sql_season_mark = "UPDATE %s SET episode_watched = 0 WHERE season = %s" % (self.IMDB_id, season)
+		else:
+			self.message.setText("You haven't selected a season")
+	
+	def create_buttons(self):
+		
+		self.button_box = QGroupBox()
+		self.button_box.layout = QHBoxLayout()
+
+		# Season list that contains all season numbers in string form that will be used later on to populate drop down menu for user to choose a season from.
+		# First value has "All" that prints all show's seasons.
+		# If show has "Unknown" season list will have an option to choose it too.
+		season_list = [""]
+
+		# Appends all seasons in string from to season_list
+		for i in range(self.seasons):
+			season_list.append(str(i + 1))
+
+		# Appends "Unknown" to the end of the list if there is an unknown season.
+		if self.unknown_season == 1:
+			season_list.append("Unknown")
+
+		season_button = QComboBox()
+		season_button.setMinimumSize(95, 31)
+		season_button.insertItems(0, season_list) # Adding all the options from season_list to the drop down menu
+		season_button.currentTextChanged.connect(self.message_box_text) # Detects if user chooses different season and sends value to print_season function
+		
+		season_button_label = QLabel("Season")
+		
+		self.button_box.layout.addWidget(season_button_label)
+		self.button_box.layout.addWidget(season_button)
+				
+		self.button_box.setLayout(self.button_box.layout)
+		
+	def create_confirmation_buttons(self):
+		
+		self.confirmation_button_box = QGroupBox()
+		self.confirmation_button_box.layout = QHBoxLayout()
+		
+		cancel = QPushButton("Cancel")
+		confirm = QPushButton("Mark as Watched")
+		
+		cancel.clicked.connect(self.reject)
+		confirm.clicked.connect(self.mark_season_as_watched)
+		
+		self.confirmation_button_box.layout.addWidget(cancel)
+		self.confirmation_button_box.layout.addWidget(confirm)
+		
+		self.confirmation_button_box.setLayout(self.confirmation_button_box.layout)
+		
+	def mark_season_as_watched(self):
+		if self.sql_season_mark == "":
+			self.message.setText("Please select a season")
+		else:
+			print(self.sql_season_mark)
+			mark_season = QtSql.QSqlQuery(self.sql_season_mark)
+			mark_season.exec_()
+			self.accept()
+
+class MarkSeasonAsWatched(MarkSeasonAsNotWatched):
+	
+	def __init__(self, IMDB_id, seasons, unknown_season):
+		super(MarkSeasonAsNotWatched, self).__init__()
+		self.IMDB_id = IMDB_id
+		self.seasons = seasons
+		self.unknown_season = unknown_season
+		self.window_title = "Choose season to mark as watched"
+		self.message_text = "Mark season %s as watched"
+		self.sql_season_mark = ""
+		self.initUI()
+
+	def message_box_text(self, season):
+		if season != "":
+			self.message.setText(self.message_text % season)
+			self.sql_season_mark = "UPDATE %s SET episode_watched = 1 WHERE season = %s" % (self.IMDB_id, season)
 
 if __name__ == "__main__":
 	app = QApplication(sys.argv)
