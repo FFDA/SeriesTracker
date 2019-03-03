@@ -50,6 +50,7 @@ class AddShow:
         self.pattern_to_look_for = re.compile("tt\d+")
         self.finished_watching = ""
         self.show_seasons = ""
+        self.unknown_season = 0 # This is a default value that shows, that unknown_season does not exist. It will be change later on when unknown season is added later.
 
         # This labda should return just IMDB_id from given link
         self.get_IMDB_id_lambda = lambda x: self.pattern_to_look_for.search(x)[0]
@@ -150,7 +151,7 @@ class AddShow:
         
         print("Inserting data in to database")
         
-        con.execute("INSERT INTO shows VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (self.IMDB_id, show_title, show_image, show_summary, len(full_seasons), " ".join(show_genres), show_running_time, len(years_aired), show_years_aired, self.finished_watching))
+        con.execute("INSERT INTO shows VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (self.IMDB_id, show_title, show_image, show_summary, len(full_seasons), " ".join(show_genres), show_running_time, len(years_aired), show_years_aired, self.finished_watching, self.unknown_season))
         con.commit()
         self.add_show_episodes()
     
