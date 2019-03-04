@@ -1,45 +1,31 @@
 #! /usr/bin/python3
 
-from PyQt5.QtCore import Qt, QCoreApplication, QSortFilterProxyModel, QSettings
-import PyQt5.QtSql as QtSql
-from PyQt5.QtWidgets import *
+#Imporing Python3 stuff
 import sys
-from PyQt5.QtGui import *
 import datetime
-import webbrowser
 import sqlite3
-import os
 from functools import partial
 
-import pathlib #  needed to get $HOME folder
-import configparser # Will be used to store path to the file of the database.
+# Importing PyQt5 stuff
+from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
+from PyQt5.QtSql import QSqlQuery
+from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit
+from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
 
+from GUI_show_info import *
+from GUI_database import *
+
+# PyQt5 settings
 settings = QSettings("SeriesTracker", "SeriesTracker")
 settings.setValue("top", 200)
 settings.setValue("left", 400)
 settings.setValue("width", 1200)
 settings.setValue("height", 800)
 
-# Setting up config parser
-config = configparser.ConfigParser()
-
-# Path to config file directory.
-config_dir = os.path.join(pathlib.Path.home(), ".config/SeriesTracker/")
-
-# Opening config file.
-config.read(config_dir + "config.ini")
-config.sections()
-
 class mainWindow(QMainWindow):
-
-	# Opening a database.
-	database = QtSql.QSqlDatabase().addDatabase("QSQLITE")
-	database.setDatabaseName(config["DATABASE"]["Path"])
-	database.open()
 
 	def __init__(self):
 		super().__init__()
-
 		self.initUI()
 
 	def initUI(self):
@@ -121,7 +107,6 @@ class TabWidget(QWidget):
 		shows_table.create_filter_box()
 		shows_table.fill_table()
 
-
 		self.tab2.layout.addWidget(shows_table.button_box)
 		self.tab2.layout.addWidget(shows_table.filter_box)
 		self.tab2.layout.addWidget(shows_table.shows_table)
@@ -167,11 +152,9 @@ class CreateEpisodesTable:
 		self.episode_table.setColumnWidth(1, 340)
 		self.episode_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
 
-
-
 	# Marks episode as watched and repopulates table with updated data.
 	def mark_watched(self, IMDB_id, episode_IMDB_id):
-		mark_episode = QtSql.QSqlQuery("UPDATE %s SET episode_watched = 1 WHERE episode_IMDB_id = '%s'" % (IMDB_id, episode_IMDB_id))
+		mark_episode = QSqlQuery("UPDATE %s SET episode_watched = 1 WHERE episode_IMDB_id = '%s'" % (IMDB_id, episode_IMDB_id))
 		mark_episode.exec_()
 		self.refill_episode_table()
 
@@ -180,13 +163,13 @@ class CreateEpisodesTable:
 		row_count = 0
 
 		# Selecting using provided query
-		selected = QtSql.QSqlQuery(self.sql_select_shows)
+		selected = QSqlQuery(self.sql_select_shows)
 
 		# Iterating thought every quary result
 		while selected.next():
 
 			# Selecting all episodes from show in the watchlist that has air_date longer than 4 digists and which has air_date beforte current date. Ordering results in descending order.
-			episode = QtSql.QSqlQuery(self.sql_filter_episodes % (selected.value("IMDB_id"), self.current_year + "-" + self.current_month_day))
+			episode = QSqlQuery(self.sql_filter_episodes % (selected.value("IMDB_id"), self.current_year + "-" + self.current_month_day))
 			episode.last()
 			self.insert_table_row(row_count, episode, selected.value("IMDB_id"), selected.value("title"))
 
@@ -255,18 +238,18 @@ class CreateUpcomingEpisodesTable(CreateEpisodesTable):
 		row_count = 0
 
 		# Selecting using provided query
-		selected = QtSql.QSqlQuery(self.sql_select_shows)
+		selected = QSqlQuery(self.sql_select_shows)
 
 		# Iterating thought every quary result
 		while selected.next():
 
 			# Selecting all episodes from show in the watchlist that has air_date longer than 4 digists and which has air_date beforte current date. Ordering results in descending order.
-			episode = QtSql.QSqlQuery(self.sql_filter_episodes % (selected.value("IMDB_id"), self.current_year + "-" + self.current_month_day))
+			episode = QSqlQuery(self.sql_filter_episodes % (selected.value("IMDB_id"), self.current_year + "-" + self.current_month_day))
 			if episode.first() == True:
 				self.insert_table_row(row_count, episode, selected.value("IMDB_id"), selected.value("title"))
 				row_count += 1
 			else:
-				episode = QtSql.QSqlQuery("select * from %s where episode_watched = 0 and (air_date is null or length(air_date) < 8)" % selected.value("IMDB_id"))
+				episode = QSqlQuery("select * from %s where episode_watched = 0 and (air_date is null or length(air_date) < 8)" % selected.value("IMDB_id"))
 				if episode.first() == True:
 					self.insert_table_row(row_count, episode, selected.value("IMDB_id"), selected.value("title"))
 					row_count += 1
@@ -405,7 +388,7 @@ class CreateShowTables:
 		
 		row_count = 0
 
-		selected = QtSql.QSqlQuery(self.sql_query)
+		selected = QSqlQuery(self.sql_query)
 
 		while selected.next():
 
@@ -480,7 +463,7 @@ class CreateShowEpisodesTable(CreateEpisodesTable):
 		# This function fills episode table using query provided in self.sql_select_shows.
 
 		row_count = 0
-		episodes = QtSql.QSqlQuery(self.sql_select_shows)
+		episodes = QSqlQuery(self.sql_select_shows)
 
 		while episodes.next():
 
@@ -577,563 +560,10 @@ class CreateShowEpisodesTableNotWatched(CreateShowEpisodesTable):
 
 	# Marks episode as watched and repopulates table with updated data.
 	def mark_not_watched(self, IMDB_id, episode_IMDB_id):
-		mark_episode = QtSql.QSqlQuery("UPDATE %s SET episode_watched = 0 WHERE episode_IMDB_id = '%s'" % (IMDB_id, episode_IMDB_id))
+		mark_episode = QSqlQuery("UPDATE %s SET episode_watched = 0 WHERE episode_IMDB_id = '%s'" % (IMDB_id, episode_IMDB_id))
 		mark_episode.exec_()
 		self.refill_episode_table()
-
-class OpenMarkAsNotWatched(QWidget):
-
-	def __init__(self, IMDB_id, title, seasons, unknown_season):
-		super(OpenMarkAsNotWatched, self).__init__()
-		self.IMDB_id = IMDB_id
-		self.title = title
-		self.seasons = seasons
-		self.unknown_season = unknown_season
-		self.setAttribute(Qt.WA_DeleteOnClose)
-		
-	def initUI(self):
-		self.setGeometry(settings.value("top"), settings.value("left"), settings.value("width"), settings.value("height"))
-		self.setMinimumSize(settings.value("width"), settings.value("height"))
-		self.setWindowTitle(self.title)
-		self.setWindowModality(Qt.ApplicationModal) # This function disables other windowsm untill user closes Show Window
-
-		self.layout = QVBoxLayout()
-		
-		self.episodes_table = CreateShowEpisodesTableNotWatched(self.IMDB_id)
-		self.episodes_table.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
-		self.episodes_table.create_table()
-		
-		self.episodes_table.episode_table.scrollToBottom()
-		
-		self.create_buttons()
-		
-		self.layout.addWidget(self.button_box)
-		self.layout.addWidget(self.episodes_table.episode_table)
-		self.setLayout(self.layout)
-		self.show()
-
-	def create_buttons(self):
-		
-		self.button_box = QGroupBox()
-		self.button_box.layout = QHBoxLayout()
-
-		# Season list that contains all season numbers in string form that will be used later on to populate drop down menu for user to choose a season from.
-		# First value has "All" that prints all show's seasons.
-		# If show has "Unknown" season list will have an option to choose it too.
-		season_list = ["All"]
-
-		# Appends all seasons in string from to season_list
-		for i in range(self.seasons):
-			season_list.append(str(i + 1))
-
-		# Appends "Unknown" to the end of the list if there is an unknown season.
-		if self.unknown_season == 1:
-			season_list.append("Unknown")
-
-		season_button = QComboBox()
-		season_button.setMinimumSize(95, 31)
-		season_button.insertItems(0, season_list) # Adding all the options from season_list to the drop down menu
-		season_button.currentTextChanged.connect(self.print_season) # Detects if user chooses different season and send value to print_season function
-		
-		season_button_label = QLabel("Season")
-		
-		self.button_box.layout.addWidget(season_button_label)
-		self.button_box.layout.addWidget(season_button)
-		
-		self.button_box.setLayout(self.button_box.layout)
 	
-		
-	def print_season(self, season):
-		# This function set new SQL query to fetch episodes from the database. 
-		# Query is set after getting a signal from dropdown menu in create_buttons() function.
-		# It resets table row count to 0 (removes data from table) and initiates fill_episode_table() function.
-
-		if season == "All":
-			self.episodes_table.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
-		elif season == "Unknown":
-			self.episodes_table.sql_select_shows = "SELECT * FROM %s WHERE season = ''" % self.IMDB_id
-		else:
-			self.episodes_table.sql_select_shows = "SELECT * FROM %s WHERE season = '%s'" % (self.IMDB_id, season)
-
-		self.episodes_table.refill_episode_table()
-		
-		
-class OpenShowWindow(QWidget):
-	
-	def __init__(self, IMDB_id):
-		super(OpenShowWindow, self).__init__()
-		self.IMDB_id = IMDB_id
-		self.fetch_show_info()
-
-	def fetch_show_info(self):
-		# Fetching data about show and seving them as variables to send to other functions/classes later.
-		show_info = QtSql.QSqlQuery("SELECT * FROM shows WHERE IMDB_id = '%s'" % self.IMDB_id)
-		show_info.first()
-		self.title = show_info.value("title")
-		self.image = show_info.value("image")
-		self.synopsis = show_info.value("synopsis")
-		self.seasons = show_info.value("seasons")
-		self.genres = show_info.value("genres")
-		self.running_time = show_info.value("running_time")
-		self.years_aired = show_info.value("years_aired")
-		self.finished_watching = show_info.value("finished_watching")
-		self.unknown_season = show_info.value("unknown_season")
-
-	def initUI(self):
-		# Initiating Show Window
-		self.setGeometry(settings.value("top"), settings.value("left"), settings.value("width"), settings.value("height"))
-		self.setMinimumSize(settings.value("width"), settings.value("height"))
-		self.setWindowTitle(self.title)
-		self.setWindowModality(Qt.ApplicationModal) # This function disables other windowsm untill user closes Show Window
-
-		self.layout = QVBoxLayout()
-		
-		self.make_show_info_box()
-		self.episodes_table = CreateShowEpisodesTable(self.IMDB_id) # Initiating episode table
-
-		self.episodes_table.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
-		self.episodes_table.create_table()
-		
-		self.episodes_table.episode_table.scrollToBottom() # Scrolls table view to the bottom
-		
-		self.create_buttons()
-
-		self.layout.addWidget(self.show_info_box)
-		self.layout.addWidget(self.button_box)
-		self.layout.addWidget(self.episodes_table.episode_table)
-		self.setLayout(self.layout)
-		self.show()
- 
-	def make_show_info_box(self):
-		
-		# Creating group box where Show Info and Poster will be placed.
-		self.show_info_box = QGroupBox()
-		self.show_info_box.layout = QGridLayout()
-
-		image_box = QLabel() # Poster placeholder
-		image_box.setMinimumSize(200, 300)
-		info_box = QGroupBox() # Group box containing Show's info
-		info_box.layout = QVBoxLayout()
-		info_box.setMinimumSize(700, 300)
-		 
-		font_title = QFont() # Font size for title
-		font_title.setPointSize(20)
-
-		font_other = QFont() # Font size for other objects
-		font_other.setPointSize(14)
-
-		font_synopsis = QFont() # Font size for synopsis
-		font_synopsis.setPointSize(12)
-		
-		title = QLabel(self.title)
-		title.setFont(font_title)
-		title.setAlignment(Qt.AlignHCenter)
-
-		years_aired = QLabel("Years aired: " + self.years_aired)
-		years_aired.setFont(font_other)
-
-		running_time = QLabel("Episode runtime: " + str(self.running_time) + " minutes")
-		running_time.setFont(font_other)
-
-		seasons = QLabel(str(self.seasons) + " season(s)")
-		seasons.setFont(font_other)
-
-		# This function retrieves number of episodes that are marked as watched.
-		watched_episode_count = QtSql.QSqlQuery("SELECT COUNT(*) FROM %s WHERE episode_watched =1" % self.IMDB_id)
-		watched_episode_count.first()
-
-		# Calculates and add to label how much minutes user spent watching show
-		watched_time = QLabel("You watched this show for %d minutes (%s hours/%s days)" % (watched_episode_count.value(0) * self.running_time, str(round(watched_episode_count.value(0) * self.running_time/60, 1)), str(round(watched_episode_count.value(0) * self.running_time/1440, 1))))
-		watched_time.setFont(font_other)
-
-		# Set's text for label that prints name of the list show is in
-		if self.finished_watching == 0:
-			current_list = "Currently in Watchlist"
-		elif self.finished_watching == 1:
-			current_list = "Currently in Finished Watching list"
-		elif self.finished_watching == 2:
-			current_list = "Currently in Plan to Watch list"
-
-		in_list = QLabel(current_list)
-		in_list.setFont(font_other)
-
-		synopsis = QLabel(self.synopsis)
-		synopsis.setWordWrap(True)
-		synopsis.setFont(font_synopsis)
-		
-		info_box.layout.addWidget(title)
-		info_box.layout.addWidget(years_aired)
-		info_box.layout.addWidget(running_time)
-		info_box.layout.addWidget(seasons)
-		info_box.layout.addWidget(watched_time)
-		info_box.layout.addWidget(in_list)
-		info_box.layout.addWidget(synopsis)
-
-		info_box.setLayout(info_box.layout)
-
-		self.show_info_box.layout.addWidget(image_box, 0, 0)
-		self.show_info_box.layout.addWidget(info_box, 0, 1, 1, 3)
-		self.show_info_box.setLayout(self.show_info_box.layout)
-		
-	def create_buttons(self):
-		
-		self.button_box = QGroupBox()
-		self.button_box.layout = QHBoxLayout()
-
-		# Season list that contains all season numbers in string form that will be used later on to populate drop down menu for user to choose a season from.
-		# First value has "All" that prints all show's seasons.
-		# If show has "Unknown" season list will have an option to choose it too.
-		season_list = ["All"]
-
-		# Appends all seasons in string from to season_list
-		for i in range(self.seasons):
-			season_list.append(str(i + 1))
-
-		# Appends "Unknown" to the end of the list if there is an unknown season.
-		if self.unknown_season == 1:
-			season_list.append("Unknown")
-
-		season_button = QComboBox()
-		season_button.setMinimumSize(95, 31)
-		season_button.insertItems(0, season_list) # Adding all the options from season_list to the drop down menu
-		season_button.currentTextChanged.connect(self.print_season) # Detects if user chooses different season and send value to print_season function
-		
-		season_button_label = QLabel("Season")
-
-		# Button that opens show's IMDB page
-		open_webpage = QPushButton("Open IMDB page")
-		open_webpage.clicked.connect(self.open_imdb_page)
-		open_webpage.setMinimumSize(150, 31)
-				
-		# Creates button menu for "Mark ..." button
-		mark_as_button_menu = QMenu()
-		mark_as_button_menu.addAction("episode as not watched", self.open_mark_episode_as_not_watched)
-		mark_as_button_menu.addAction("season as not watched", self.open_mark_season_as_not_watched)
-		mark_as_button_menu.addAction("up to episode as watched", self.mark_up_to_episode_as_watched)
-		mark_as_button_menu.addAction("season as watched", self.open_mark_season_as_watched)
-				
-		# Creates button menu for "Update ..." button
-		update_button_menu = QMenu()
-		update_button_menu.addAction("Update show")
-		update_button_menu.addAction("Update season")
-
-		# Other buttons to manage database.
-		mark_as_button = QPushButton("Mark ...")
-		mark_as_button.setMinimumSize(150, 31)
-		mark_as_button.setMenu(mark_as_button_menu)
-		update_button = QPushButton("Update ...")
-		update_button.setMinimumSize(150, 31)
-		update_button.setMenu(update_button_menu)
-		fix_season = QPushButton("Fix Season")
-		fix_season.setMinimumSize(150, 31)
-
-		self.button_box.layout.addWidget(season_button_label)
-		self.button_box.layout.addWidget(season_button)
-		self.button_box.layout.insertStretch(2)
-		self.button_box.layout.addWidget(mark_as_button)
-		self.button_box.layout.addWidget(update_button)
-		self.button_box.layout.addWidget(fix_season)
-		self.button_box.layout.addWidget(open_webpage)
-
-		self.button_box.setLayout(self.button_box.layout)
-		
-	def open_imdb_page(self):
-		# This function opens shows Webpage
-		imdb_url = "https://www.imdb.com/title/" + self.IMDB_id
-		webbrowser.open(imdb_url, new=2, autoraise=True)
-	
-	def print_season(self, season):
-		# This function set new SQL query to fetch episodes from the database. 
-		# Query is set after getting a signal from dropdown menu in create_buttons() function.
-		# It resets table row count to 0 (removes data from table) and initiates fill_episode_table() function.
-
-		if season == "All":
-			self.episodes_table.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
-		elif season == "Unknown":
-			self.episodes_table.sql_select_shows = "SELECT * FROM %s WHERE season = ''" % self.IMDB_id
-		else:
-			self.episodes_table.sql_select_shows = "SELECT * FROM %s WHERE season = '%s'" % (self.IMDB_id, season)
-
-		self.episodes_table.refill_episode_table()
-
-	def open_mark_episode_as_not_watched(self):
-		self.open_mark_episode_as_not_watched_window = OpenMarkAsNotWatched(self.IMDB_id, self.title, self.seasons, self.unknown_season)
-		self.open_mark_episode_as_not_watched_window.initUI()
-		self.open_mark_episode_as_not_watched_window.destroyed.connect(self.episodes_table.refill_episode_table)
-		
-	def open_mark_season_as_not_watched(self):
-		self.open_mark_season_as_not_watched_window = MarkSeasonAsNotWatched(self.IMDB_id, self.seasons, self.unknown_season, self.title)
-		result = self.open_mark_season_as_not_watched_window.exec_()
-		
-		if result == QDialog.Accepted:
-			self.refill_episode_table()
-		
-	def open_mark_season_as_watched(self):
-		self.open_mark_season_as_watched_window = MarkSeasonAsWatched(self.IMDB_id, self.seasons, self.unknown_season, self.title)
-		result = self.open_mark_season_as_watched_window.exec_()
-		
-		if result == QDialog.Accepted:
-			self.refill_episode_table()
-	
-	def mark_up_to_episode_as_watched(self):
-		self.open_mark_up_to_episode_as_watched = MarkUpToEpisodeAsWatched(self.IMDB_id, self.title, self.seasons, self.unknown_season)
-		result = self.open_mark_up_to_episode_as_watched.exec_()
-		
-		if result == QDialog.Accepted:
-			self.refill_episode_table()
-	
-	def refill_episode_table(self):
-		self.episodes_table.refill_episode_table()
-		
-class MarkSeasonAsNotWatched(QDialog):
-	
-	def __init__(self, IMDB_id, seasons, unknown_season, title):
-		super(QDialog, self).__init__()
-		self.IMDB_id = IMDB_id
-		self.seasons = seasons
-		self.unknown_season = unknown_season
-		self.title = title
-		self.window_title = "Choose season of %s to mark as watched" % self.title
-		self.message_text = "Mark season %s as not watched"
-		self.sql_season_mark = ""
-		self.initUI()
-
-	def initUI(self):
-		self.setGeometry(400, 600, 600, 400)
-		self.setWindowTitle(self.window_title)
-		self.setModal(True)
-		
-		self.layout = QVBoxLayout()
-		self.create_buttons()
-		self.message = QLabel("You haven't selected a season")
-		self.create_confirmation_buttons()
-		
-		self.layout.addWidget(self.button_box)
-		self.layout.addWidget(self.message)
-		self.layout.addWidget(self.confirmation_button_box)
-		self.setLayout(self.layout)
-	
-	def message_box_text(self, season):
-		if season != "":
-			self.message.setText(self.message_text % season)
-			self.sql_season_mark = "UPDATE %s SET episode_watched = 0 WHERE season = %s" % (self.IMDB_id, season)
-		else:
-			self.message.setText("You haven't selected a season")
-	
-	def create_buttons(self):
-		
-		self.button_box = QGroupBox()
-		self.button_box.layout = QHBoxLayout()
-
-		# Season list that contains all season numbers in string form that will be used later on to populate drop down menu for user to choose a season from.
-		# First value has "All" that prints all show's seasons.
-		# If show has "Unknown" season list will have an option to choose it too.
-		season_list = [""]
-
-		# Appends all seasons in string from to season_list
-		for i in range(self.seasons):
-			season_list.append(str(i + 1))
-
-		# Appends "Unknown" to the end of the list if there is an unknown season.
-		if self.unknown_season == 1:
-			season_list.append("Unknown")
-
-		season_button = QComboBox()
-		season_button.setMinimumSize(95, 31)
-		season_button.insertItems(0, season_list) # Adding all the options from season_list to the drop down menu
-		season_button.currentTextChanged.connect(self.message_box_text) # Detects if user chooses different season and sends value to print_season function
-		
-		season_button_label = QLabel("Season")
-		
-		self.button_box.layout.addWidget(season_button_label)
-		self.button_box.layout.addWidget(season_button)
-				
-		self.button_box.setLayout(self.button_box.layout)
-		
-	def create_confirmation_buttons(self):
-		
-		self.confirmation_button_box = QGroupBox()
-		self.confirmation_button_box.layout = QHBoxLayout()
-		
-		cancel = QPushButton("Cancel")
-		confirm = QPushButton("Mark as Watched")
-		
-		cancel.clicked.connect(self.reject)
-		confirm.clicked.connect(self.mark_season_as_watched)
-		
-		self.confirmation_button_box.layout.addWidget(cancel)
-		self.confirmation_button_box.layout.addWidget(confirm)
-		
-		self.confirmation_button_box.setLayout(self.confirmation_button_box.layout)
-		
-	def mark_season_as_watched(self):
-		if self.sql_season_mark == "":
-			self.message.setText("Please select a season")
-		else:
-			print(self.sql_season_mark)
-			mark_season = QtSql.QSqlQuery(self.sql_season_mark)
-			mark_season.exec_()
-			self.accept()
-
-class MarkSeasonAsWatched(MarkSeasonAsNotWatched):
-	
-	def __init__(self, IMDB_id, seasons, unknown_season, title):
-		super(MarkSeasonAsNotWatched, self).__init__()
-		self.IMDB_id = IMDB_id
-		self.seasons = seasons
-		self.unknown_season = unknown_season
-		self.title = title
-		self.window_title = "Choose season of %s to mark as watched" % self.title
-		self.message_text = "Mark season %s as watched"
-		self.sql_season_mark = ""
-		self.initUI()
-
-	def message_box_text(self, season):
-		if season != "":
-			self.message.setText(self.message_text % season)
-			self.sql_season_mark = "UPDATE %s SET episode_watched = 1 WHERE season = %s" % (self.IMDB_id, season)
-
-class MarkUpToEpisodeAsWatched(QDialog):
-	
-	def __init__(self, IMDB_id, title, seasons, unknown_season):
-		super(MarkUpToEpisodeAsWatched, self).__init__()
-		self.IMDB_id = IMDB_id
-		self.title = title
-		self.seasons = seasons
-		self.unknown_season = unknown_season
-		self.window_title = "Choose episode of %s" % self.title
-		self.message_text = "Select the episode and press confirm. All episodes up to selected one will be marked as watched."
-		self.sql_episode_mark = ""
-		self.initUI()
-		
-	def initUI(self):
-		self.setGeometry(400, 600, 800, 500)
-		self.setWindowTitle(self.window_title)
-		self.layout = QVBoxLayout()
-		
-		self.message = QLabel(self.message_text)
-		self.message.setWordWrap(True)
-		
-		self.create_confirmation_buttons()
-		
-		self.create_episode_tables()
-		
-		self.mark_message = QLabel("You haven't selected an episode")
-		
-		self.layout.addWidget(self.message)
-		self.layout.addWidget(self.scroll_area)
-		self.layout.addWidget(self.mark_message)
-		self.layout.addWidget(self.confirmation_button_box)
-		
-		self.setLayout(self.layout)
-		
-	def create_episode_tables(self):
-		
-		self.table_dict = {} # THis is a dictionary that holds every table in it.
-		
-		self.scroll_area = QScrollArea()
-		
-		self.scroll_area.setWidgetResizable(True)
-		self.episode_tables = QWidget()
-		self.episode_tables.layout = QGridLayout()
-		#self.episode_tables.layout.setSizeConstraint(QLayout.SetMinAndMaxSize)
-		
-		# Integers that hold values to make a 3x3 grid from tables.
-		widget_row_count = 0
-		widget_col_count = 0
-
-		for season in range(1, self.seasons + 1):
-			
-			self.table_box = QGroupBox()
-			self.table_box.layout = QVBoxLayout()
-			self.table_box.setTitle("%d Season" % season)
-			
-			self.table_dict["self.episode_table_widget_{0}".format(season)] = QTableWidget() # Creates dictory keys with name that starts "self.episode_table_widget_" and has season number at the end. Item for this dictionary item is a QTableWidget.
-			
-			current_table_widget = self.table_dict["self.episode_table_widget_{0}".format(season)] # Asings normalish name for the table widget
-			
-			current_table_widget.setColumnCount(3)
-			current_table_widget.setEditTriggers(QAbstractItemView.NoEditTriggers) # Makes widget not editable
-			
-			selected_episodes = QtSql.QSqlQuery("SELECT episode_seasonal_id FROM %s WHERE season = '%s'" % (self.IMDB_id, season))
-			
-			# Variables to make table as 3x3 grid.		
-			row_count = 0
-			col_count = 0
-			
-			current_table_widget.insertRow(row_count)
-			
-			while selected_episodes.next():
-						
-				if col_count == 3: # Resets tables column count every third coumn and adds an extra line to the table
-					col_count = 0
-					row_count += 1
-					current_table_widget.insertRow(row_count)
-				
-				current_table_widget.setItem(row_count, col_count, QTableWidgetItem(selected_episodes.value("episode_seasonal_id")))
-				
-				col_count += 1
-
-			current_table_widget.verticalHeader().setVisible(False)
-			current_table_widget.horizontalHeader().setVisible(False)
-			#episode_table_widget.setFixedSize(200, 300)
-			current_table_widget.resizeColumnsToContents()
-			
-			current_table_widget.cellClicked.connect(partial(self.make_sql_query, season))
-			
-			self.table_box.layout.addWidget(current_table_widget)
-			self.table_box.setLayout(self.table_box.layout)
-			
-			# Resest widget_col_count every third column
-			if widget_col_count == 3:
-				widget_col_count = 0
-				widget_row_count += 1
-			
-			widget_col_count += 1
-			
-			self.episode_tables.layout.addWidget(self.table_box, widget_row_count, widget_col_count) # Adds table to episode_tables grid
-			
-		self.episode_tables.setLayout(self.episode_tables.layout)
-		
-		self.scroll_area.setWidget(self.episode_tables)
-		
-	def make_sql_query(self, season, row, col):
-		# This function checks if user clicked on cell with data. If there is an episode_seasoal_id it sets/uptates sql query that will be used to update database and prints message to user.
-		# Otherwise it prints a message to user saying that he has to select an episode and sets sql_query string to empty one.
-		try:
-			episode_seasonal_id = self.table_dict["self.episode_table_widget_{0}".format(season)].item(row, col).text()
-			self.mark_message.setText("Episodes up to and including %s will be marked as watched" % episode_seasonal_id)
-			self.sql_episode_mark = "UPDATE %s SET episode_watched = 1 WHERE episode_seasonal_id <= '%s' AND episode != ''" % (self.IMDB_id, episode_seasonal_id)
-		except AttributeError:
-			self.mark_message.setText("You haven't selected an episode")
-			self.sql_episode_mark = ""
-			
-		
-	def create_confirmation_buttons(self):
-		# Creates button that will be displayed at the bottom of the Window to confirm or cancel action.
-		self.confirmation_button_box = QGroupBox()
-		self.confirmation_button_box.layout = QHBoxLayout()
-				
-		cancel = QPushButton("Cancel")
-		confirm = QPushButton("Mark as Watched")
-		
-		cancel.clicked.connect(self.reject) #This button rejects the action and closes window withour changing anything in database.
-		confirm.clicked.connect(self.mark_up_to_episode)
-		
-		self.confirmation_button_box.layout.addWidget(cancel)
-		self.confirmation_button_box.layout.addWidget(confirm)
-		
-		self.confirmation_button_box.setLayout(self.confirmation_button_box.layout)
-		
-	def mark_up_to_episode(self):
-		# Marks all episodes to as watched if query isn't empty.
-		# Otherwise prints a message to user.
-		if self.sql_episode_mark != "":
-			mark_query = QtSql.QSqlQuery(self.sql_episode_mark)
-			mark_query.exec_()
-			self.accept()
-		else:
-			self.mark_message.setText("Please choose an episode or click cancel")
 
 if __name__ == "__main__":
 	app = QApplication(sys.argv)

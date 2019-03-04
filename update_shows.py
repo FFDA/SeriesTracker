@@ -67,9 +67,9 @@ class UpdateShows:
         fetched_show_data = imdb.get_title_episodes_detailed(current_IMDB_id, 1)
 
         fetched_season_list = fetched_show_data['allSeasons']
-        if None in fetched_season_list:
-            fetched_season_list.remove(None)
-        fetched_seasons = len(fetched_season_list)
+#        if None in fetched_season_list:
+#            fetched_season_list.remove(None)
+#        fetched_seasons = len(fetched_season_list)
         
         
         if None in fetched_season_list:

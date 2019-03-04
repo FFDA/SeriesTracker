@@ -1,0 +1,17 @@
+#! /usr/bin/python3
+
+class UpdateSingleSeason(QDialog):
+	
+	def __init__(self, IMDB_id, seasons, unknown_season):
+		super(UpdateSingleSeason, self).__init__()
+		self.IMDB_id = IMDB_id
+		self.seasons = seasons
+		self.unknown_season = unknown_season
+		self.initUI()
+		
+	def initUI(self):
+		self.setGeometry(400, 600, 800, 500)
+		self.setModal(True)
+		
+		
+		self.show() 
