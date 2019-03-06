@@ -2,8 +2,6 @@
 
 # This class will update tables of the shows.
 
-import sqlite3
-
 # Importing other programs modules writen by me.
 from template import Templates
 from add_show import AddShow 

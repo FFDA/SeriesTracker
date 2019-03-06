@@ -9,10 +9,11 @@ import webbrowser
 from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QComboBox, QMenu
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QFont
 from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
-from PyQt5.QtSql import QSqlDatabase, QSqlQuery
+#from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 
 from GUI_episode_tracker import CreateShowEpisodesTable
-from GUI_ShowInfo_mark import *
+from GUI_show_info_mark import *
+from GUI_show_info_update import *
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
 
@@ -242,7 +243,7 @@ class OpenShowWindow(QWidget):
 			self.refill_episode_table()
 			
 	def open_update_single_season(self):
-		self.open_update_single_season_window = UpdateSingleSeason(self.IMDB_id, self.seasons, self.unknown_season)
+		self.open_update_single_season_window = UpdateSingleSeason(self.IMDB_id, self.seasons, self.unknown_season, self.title)
 		result = self.open_update_single_season_window.exec_()
 		
 		if result == QDialog.Accepted:

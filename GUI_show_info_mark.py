@@ -2,10 +2,10 @@
 
 # This file creates windows for all "Mark ..." button options
 
-#Imporing Python3 stuff
+# Python3 imports
 from functools import partial
 
-# Importing PyQt5 stuff
+# PyQt5 imports
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QDialog, QScrollArea, QComboBox, QGridLayout, QTableWidget, QTableWidgetItem
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
 from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
@@ -237,7 +237,7 @@ class MarkUpToEpisodeAsWatched(QDialog):
 			self.mark_message.setText("You haven't selected an episode")
 			self.sql_episode_mark = ""
 			
-		
+
 	def create_confirmation_buttons(self):
 		# Creates button that will be displayed at the bottom of the Window to confirm or cancel action.
 		self.confirmation_button_box = QGroupBox()
@@ -253,6 +253,7 @@ class MarkUpToEpisodeAsWatched(QDialog):
 		self.confirmation_button_box.layout.addWidget(confirm)
 		
 		self.confirmation_button_box.setLayout(self.confirmation_button_box.layout)
+
 		
 	def mark_up_to_episode(self):
 		# Marks all episodes to as watched if query isn't empty.
