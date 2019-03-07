@@ -174,7 +174,7 @@ class OpenShowWindow(QWidget):
 		update_button_menu = QMenu()
 		update_button_menu.addAction("show info")
 		update_button_menu.addAction("single season", self.open_update_single_season)
-		update_button_menu.addAction("last three season")
+		update_button_menu.addAction("last three season", self.open_update_last_3_seasons)
 
 		# Other buttons to manage database.
 		mark_as_button = QPushButton("Mark ...")
@@ -248,14 +248,12 @@ class OpenShowWindow(QWidget):
 		if result == QDialog.Accepted:
 			self.refill_episode_table()
 	
-	# def open_update_last_3_seasons(self):
-		# selected_season = ""
-		# self.open_update_last_3_seasons_window = Update3Seasons(self.IMDB_id, selected_season, self.title, self.seasons, self.unknown_season)
-		# result = self.open_update_last_3_seasons_window.exec_()
+	def open_update_last_3_seasons(self):
+		self.open_update_single_season_window = UpdateThreeSeasons(self.IMDB_id, self.seasons, self.unknown_season, self.title)
+		result = self.open_update_single_season_window.exec_()
 		
-		# if result == QDialog.Accepted:
-			# print("aha")
-			# #self.refill_episode_table()
+		if result == QDialog.Accepted:
+			self.refill_episode_table()
 	
 	def refill_episode_table(self):
 		self.episodes_table.refill_episode_table()

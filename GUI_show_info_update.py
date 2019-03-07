@@ -106,7 +106,15 @@ class UpdateSingleSeason(QDialog):
 		self.progress_bar.setMinimum(self.progress_minimum)
 		self.progress_bar.setMaximum(self.progress_maximum)
 
+	def change_season_button_index(self):
+		# This function exists, because I will be able to change season_button index after finishing updating season.
+		# Previously it was at the end of update_season function, but it made to error out UpdateThreeSeason class.
+	
+		self.season_button.setCurrentIndex(0) # This sets season combo_box to option that doesn't have any value and it should disable "Update Season" button.
+	
 	def update_season(self):
+		
+		# This function needs self.title, self.selected_season, self.seasons, self.IMDB_id
 		
 		self.ok.setDisabled(True) # Setting OK button to be disabled just in case.
 		
@@ -269,4 +277,88 @@ class UpdateSingleSeason(QDialog):
 		
 		self.cancel.setDisabled(True) # Disabling "Cancel" button because user has to quit using OK button to refresh tables
 		self.ok.setDisabled(False) # Re enabling OK button
-		self.season_button.setCurrentIndex(0) # This sets season combo_box to option that doesn't have any value and it should disable "Update Season" button.
+		self.change_season_button_index()
+		
+
+class UpdateThreeSeasons(UpdateSingleSeason):
+	
+	def __init__(self, IMDB_id, seasons, unknown_season, title):
+		super(UpdateSingleSeason, self).__init__()
+		self.IMDB_id = IMDB_id
+		self.seasons = seasons
+		self.unknown_season = unknown_season
+		self.title = title
+		self.selected_season = ""
+		self.window_title = "Update last three seasons of %s" % self.title
+		self.imdb = Imdb()
+		self.progress_minimum = 0
+		self.progress_maximum = 1
+		self.initUI()
+
+	def initUI(self):
+		self.setGeometry(400, 600, 800, 500)
+		self.setModal(True)
+		self.setWindowTitle(self.window_title)
+		self.layout = QGridLayout()
+		
+		#self.create_choose_season_combobox()
+		
+		self.season_list = []
+
+		# Appends all seasons in string from to season_list
+		for i in range(self.seasons):
+			self.season_list.append(str(i + 1))
+
+		# Appends "Unknown" to the end of the list if there is an unknown season.
+		if self.unknown_season == 1:
+			self.season_list.append("Unknown")
+		
+		self.info_box = QTextEdit()
+		self.info_box.setReadOnly(True)
+		
+		self.create_progress_bar()
+		
+		if len(self.season_list[-3:]) == 3:
+			self.message = QLabel("Seasons {}, {} and {} will be updated".format(*self.season_list[-3:]))
+		elif len(self.season_list[-3:]) == 2:
+			self.message = QLabel("Seasons {} and {} will be updated".format(*self.season_list[-3:]))
+		else:
+			self.message = QLabel("Season {} will be updated".format(*self.season_list[-3:]))
+		
+		self.message.setAlignment(Qt.AlignCenter)
+		
+		self.create_confirmation_buttons()
+		
+		self.layout.addWidget(self.message, 0, 0, 1, 4)
+		self.layout.addWidget(self.info_box, 1, 0, 4, 4)
+		self.layout.addWidget(self.progress_bar, 6, 0, 1, 4)
+		self.layout.addWidget(self.cancel, 7, 0, 1, 1)
+		self.layout.addWidget(self.update_button, 7, 2, 1, 1)
+		self.layout.addWidget(self.ok, 7, 3, 1, 1)
+		self.setLayout(self.layout)
+		self.show() 
+
+	def create_confirmation_buttons(self):
+				
+		self.cancel = QPushButton("Cancel")
+		self.ok = QPushButton("OK")
+		self.ok.setDisabled(True) # Disables OK button. It will be enabled after update operation is finished.
+		self.update_button = QPushButton("Update Seasons")
+		
+		self.cancel.clicked.connect(self.reject) #This button rejects the action and closes window withour changing anything in database.
+		self.ok.clicked.connect(self.accept)
+		self.update_button.clicked.connect(self.update_three_seasons)
+		
+	def update_three_seasons(self):
+		
+		for season in self.season_list[-3:]:
+			self.selected_season = season
+			self.update_season()
+		
+		self.cancel.setDisabled(True)
+		self.update_button.setDisabled(True)
+	
+	def change_season_button_index(self):
+		# This function is here to make function in UpdateSeason class with same name to do nothing.
+		pass
+			
