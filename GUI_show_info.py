@@ -198,6 +198,7 @@ class OpenShowWindow(QWidget):
 		update_button.setMinimumSize(150, 31)
 		update_button.setMenu(update_button_menu)
 		fix_season = QPushButton("Fix Season")
+		fix_season.clicked.connect(self.open_fix_season)
 		fix_season.setMinimumSize(150, 31)
 
 		self.button_box.layout.addWidget(season_button_label)
@@ -229,6 +230,14 @@ class OpenShowWindow(QWidget):
 
 		self.episodes_table.refill_episode_table()
 
+	def open_fix_season(self):
+		self.open_fix_season_window = FixSeason(self.IMDB_id, self.seasons, self.unknown_season, self.title)
+		result = self.open_fix_season_window.exec_()
+		
+		if result == QDialog.Accepted:
+			print("tatatad")
+			#self.refill_episode_table()
+	
 	def open_mark_episode_as_not_watched(self):
 		self.open_mark_episode_as_not_watched_window = OpenMarkAsNotWatched(self.IMDB_id, self.title, self.seasons, self.unknown_season)
 		self.open_mark_episode_as_not_watched_window.initUI()
