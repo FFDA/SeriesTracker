@@ -83,49 +83,37 @@ class OpenShowWindow(QWidget):
 		font_synopsis = QFont() # Font size for synopsis
 		font_synopsis.setPointSize(12)
 		
-		title = QLabel(self.title)
-		title.setFont(font_title)
-		title.setAlignment(Qt.AlignHCenter)
+		self.label_title = QLabel()
+		self.label_title.setFont(font_title)
+		self.label_title.setAlignment(Qt.AlignHCenter)
+		
+		self.label_years_aired = QLabel()
+		self.label_years_aired.setFont(font_other)
 
-		years_aired = QLabel("Years aired: " + self.years_aired)
-		years_aired.setFont(font_other)
+		self.label_running_time = QLabel()
+		self.label_running_time.setFont(font_other)
 
-		running_time = QLabel("Episode runtime: " + str(self.running_time) + " minutes")
-		running_time.setFont(font_other)
-
-		seasons = QLabel(str(self.seasons) + " season(s)")
-		seasons.setFont(font_other)
-
-		# This function retrieves number of episodes that are marked as watched.
-		watched_episode_count = QSqlQuery("SELECT COUNT(*) FROM %s WHERE episode_watched =1" % self.IMDB_id)
-		watched_episode_count.first()
+		self.label_seasons = QLabel()
+		self.label_seasons.setFont(font_other)
 
 		# Calculates and add to label how much minutes user spent watching show
-		watched_time = QLabel("You watched this show for %d minutes (%s hours/%s days)" % (watched_episode_count.value(0) * self.running_time, str(round(watched_episode_count.value(0) * self.running_time/60, 1)), str(round(watched_episode_count.value(0) * self.running_time/1440, 1))))
-		watched_time.setFont(font_other)
+		self.label_watched_time = QLabel()
+		self.label_watched_time.setFont(font_other)
 
-		# Set's text for label that prints name of the list show is in
-		if self.finished_watching == 0:
-			current_list = "Currently in Watchlist"
-		elif self.finished_watching == 1:
-			current_list = "Currently in Finished Watching list"
-		elif self.finished_watching == 2:
-			current_list = "Currently in Plan to Watch list"
+		self.label_in_list = QLabel()
+		self.label_in_list.setFont(font_other)
 
-		in_list = QLabel(current_list)
-		in_list.setFont(font_other)
-
-		synopsis = QLabel(self.synopsis)
-		synopsis.setWordWrap(True)
-		synopsis.setFont(font_synopsis)
+		self.label_synopsis = QLabel()
+		self.label_synopsis.setWordWrap(True)
+		self.label_synopsis.setFont(font_synopsis)
 		
-		info_box.layout.addWidget(title)
-		info_box.layout.addWidget(years_aired)
-		info_box.layout.addWidget(running_time)
-		info_box.layout.addWidget(seasons)
-		info_box.layout.addWidget(watched_time)
-		info_box.layout.addWidget(in_list)
-		info_box.layout.addWidget(synopsis)
+		info_box.layout.addWidget(self.label_title)
+		info_box.layout.addWidget(self.label_years_aired)
+		info_box.layout.addWidget(self.label_running_time)
+		info_box.layout.addWidget(self.label_seasons)
+		info_box.layout.addWidget(self.label_watched_time)
+		info_box.layout.addWidget(self.label_in_list)
+		info_box.layout.addWidget(self.label_synopsis)
 
 		info_box.setLayout(info_box.layout)
 
@@ -133,6 +121,32 @@ class OpenShowWindow(QWidget):
 		self.show_info_box.layout.addWidget(info_box, 0, 1, 1, 3)
 		self.show_info_box.setLayout(self.show_info_box.layout)
 		
+		self.fill_show_info_box()
+		
+	def fill_show_info_box(self):
+		self.label_title.setText(self.title)
+		self.label_years_aired.setText("Years aired: " + self.years_aired)
+		self.label_running_time.setText("Episode runtime: " + str(self.running_time) + " minutes")
+		self.label_seasons.setText(str(self.seasons) + " season(s)")
+		
+		# This function retrieves number of episodes that are marked as watched.
+		watched_episode_count = QSqlQuery("SELECT COUNT(*) FROM %s WHERE episode_watched =1" % self.IMDB_id)
+		watched_episode_count.first()
+		
+		self.label_watched_time.setText("You watched this show for %d minutes (%s hours/%s days)" % (watched_episode_count.value(0) * self.running_time, str(round(watched_episode_count.value(0) * self.running_time/60, 1)), str(round(watched_episode_count.value(0) * self.running_time/1440, 1))))
+		
+		# Set's text for label that prints name of the list show is in
+		if self.finished_watching == 0:
+			current_list = "Currently in Watchlist"
+		elif self.finished_watching == 1:
+			current_list = "Currently in Finished Watching list"
+		elif self.finished_watching == 2:
+			current_list = "Currently in Plan to Watch list"
+	
+		self.label_in_list.setText(current_list)
+		
+		self.label_synopsis.setText(self.synopsis)
+	
 	def create_buttons(self):
 		
 		self.button_box = QGroupBox()
@@ -172,7 +186,7 @@ class OpenShowWindow(QWidget):
 				
 		# Creates button menu for "Update ..." button
 		update_button_menu = QMenu()
-		update_button_menu.addAction("show info")
+		update_button_menu.addAction("show info", self.open_update_show_info)
 		update_button_menu.addAction("single season", self.open_update_single_season)
 		update_button_menu.addAction("last three season", self.open_update_last_3_seasons)
 
@@ -254,6 +268,14 @@ class OpenShowWindow(QWidget):
 		
 		if result == QDialog.Accepted:
 			self.refill_episode_table()
+			
+	def open_update_show_info(self):
+		self.open_update_show_info_window = UpdateShowInfo(self.IMDB_id, self.title)
+		result = self.open_update_show_info_window.exec_()
+		
+		if result == QDialog.Accepted:
+			self.fetch_show_info()
+			self.fill_show_info_box()
 	
 	def refill_episode_table(self):
 		self.episodes_table.refill_episode_table()
