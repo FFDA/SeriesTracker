@@ -9,11 +9,12 @@ from functools import partial
 # Importing PyQt5 stuff
 from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
 from PyQt5.QtSql import QSqlQuery
-from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit
+from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QDialog
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
 
 from GUI_show_info import *
 from GUI_database import *
+from GUI_add_show import *
 
 # PyQt5 settings
 settings = QSettings("SeriesTracker", "SeriesTracker")
@@ -98,7 +99,7 @@ class TabWidget(QWidget):
 	def tab2UI(self):
 
 		# Setting tab2 laytout to vertival
-		self.tab2.layout = QVBoxLayout()
+		self.tab2.layout = QGridLayout()
 
 		shows_table = CreateShowTables()
 
@@ -107,9 +108,10 @@ class TabWidget(QWidget):
 		shows_table.create_filter_box()
 		shows_table.fill_table()
 
-		self.tab2.layout.addWidget(shows_table.button_box)
-		self.tab2.layout.addWidget(shows_table.filter_box)
-		self.tab2.layout.addWidget(shows_table.shows_table)
+		self.tab2.layout.addWidget(shows_table.button_box, 0, 0, 1, 4)
+		self.tab2.layout.addWidget(shows_table.button_add_show_box, 0, 5, 1, 1)
+		self.tab2.layout.addWidget(shows_table.filter_box,1, 0, 1, 6)
+		self.tab2.layout.addWidget(shows_table.shows_table, 2, 0, 10, 6)
 		self.tab2.setLayout(self.tab2.layout)
 
 class CreateEpisodesTable:
@@ -305,6 +307,8 @@ class CreateUpcomingEpisodesTable(CreateEpisodesTable):
 
 
 class CreateShowTables:
+	
+	# This class creates UI for "Shows" tab.
 
 	def __init__(self):
 		# self.table_label_text = "All Shows"
@@ -315,6 +319,15 @@ class CreateShowTables:
 	def create_buttons(self):
 
 		# Innitiating box for buttons and adding layout for it.
+		
+		self.button_add_show_box = QGroupBox()
+		self.button_add_show_box.layout = QHBoxLayout()	
+		
+		button_add_show = QPushButton("Add Show")
+		button_add_show.clicked.connect(self.open_add_show)
+		self.button_add_show_box.layout.addWidget(button_add_show)		
+		self.button_add_show_box.setLayout(self.button_add_show_box.layout)
+		
 		self.button_box = QGroupBox()
 		self.button_box.layout = QHBoxLayout()
 
@@ -330,7 +343,7 @@ class CreateShowTables:
 		btn_plan_to_watch.setCheckable(True)
 
 		# Setting default button
-		btn_all_shows.setChecked(True)
+		btn_all_shows.setChecked(True)	
 
 		# Set buttons to work exclusively 
 		btn_all_shows.setAutoExclusive(True)
@@ -355,6 +368,7 @@ class CreateShowTables:
 		
 		# Adding search/filter box
 		self.filter_box = QLineEdit()
+		self.filter_box.setClearButtonEnabled(True)
 		self.filter_box.setPlaceholderText("Start typing show's title")
 		# self.filter_box.setFocusPolicy(Qt.StrongFocus)
 		self.filter_box.textChanged.connect(self.filter_model.setFilterRegExp)
@@ -426,6 +440,13 @@ class CreateShowTables:
 		IMDB_id = self.filter_model.data(self.filter_model.index(pos.row(), 5))
 		self.show_window = OpenShowWindow(IMDB_id)
 		self.show_window.initUI()
+		
+	def open_add_show(self):
+		self.open_add_show_window = AddShow()
+		result = self.open_add_show_window.exec_()
+		
+		if result == QDialog.Accepted:
+			self.refill_table(self.sql_query)
 
 class CreateShowEpisodesTable(CreateEpisodesTable):
 
@@ -563,6 +584,8 @@ class CreateShowEpisodesTableNotWatched(CreateShowEpisodesTable):
 		mark_episode = QSqlQuery("UPDATE %s SET episode_watched = 0 WHERE episode_IMDB_id = '%s'" % (IMDB_id, episode_IMDB_id))
 		mark_episode.exec_()
 		self.refill_episode_table()
+		
+
 	
 
 if __name__ == "__main__":

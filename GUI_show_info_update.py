@@ -2,7 +2,7 @@
 
 from imdbpie import Imdb
 
-import sqlite3
+#import sqlite3
 import re
 import urllib.request as urllib
 from bs4 import BeautifulSoup
@@ -170,7 +170,7 @@ class UpdateSingleSeason(QDialog):
 			if fetched_episode_air_date == None:
 				fetched_episode_air_date = ""
 
-			if fetched_episode_number != "" or season_in_database != "":
+			if fetched_episode_number != "" and season_in_database != "":
 				if season_in_IMDB <= 9:
 					new_episode_seasonal_id_season = "S0" + str(season_in_IMDB)
 				else:
@@ -428,6 +428,7 @@ class UpdateShowInfo(QDialog):
 	def update_show_info(self, IMDB_id):
 		
 		something_updated_trigger = 0
+		fetched_finished_airing = 2 # Default value for finished_airing. It will be changed later on if it is detected that show finished airing.
 		
 		self.info_box.append("Starting updating show %s info. Pease be patient" % self.title)
 			
@@ -463,25 +464,35 @@ class UpdateShowInfo(QDialog):
 			fetched_unknown_season = 0
 		
 		self.progress_bar.setValue(4)
-			
-		# Downloadning HTML page of the website.
-		html_page = urllib.urlopen("https://www.imdb.com/title/" + IMDB_id +"/")
-		# Parsing downloaded HTML file to get title of the page.
-		soup_title = BeautifulSoup(html_page, 'html.parser').title.contents[0]
-		# Parsing years aired of the show.
-		years_aired = re.findall("(?<=\D)\d{4}(?=\D)", soup_title)
+		
+		# Tries to get years when show started and finish airing.
+		# If it can't get a second year it means, that show is still airing. It's not always the case, but it best I can do.
+		# If finished_aird last year matches the start year it means that show aired just for one year.
+		show_info_year = self.imdb.get_title_auxiliary(IMDB_id) # Retrieving show's info from IMDB
+		show_start_year = show_info_year["seriesStartYear"]
+		try:
+			show_end_year = show_info_year["seriesEndYear"]
+		except KeyError:
+			show_end_year = ""
+			fetched_finished_airing = 1	
 		
 		self.progress_bar.setValue(5)
 		
-		self.info_box.append(current_years_aired)
-		self.info_box.append(str(years_aired))
+		# Setting years airing that will be inserted into database.
+		if show_start_year == show_end_year:
+			fetched_years_aired = show_start_year		
+		else:
+			fetched_years_aired = str(show_start_year) + " - " + str(show_end_year)
+		
+		#self.info_box.append(current_years_aired)
+		#self.info_box.append(str(years_aired))
 
-		fetched_finished_airing = len(years_aired)
+		#fetched_finished_airing = len(years_aired)
 
-		if len(years_aired) == 2:
-			fetched_years_aired = years_aired[0] + " - " + years_aired[1]
-		elif len(years_aired) == 1:
-			fetched_years_aired = years_aired[0] + " - "
+		#if len(years_aired) == 2:
+		#	fetched_years_aired = years_aired[0] + " - " + years_aired[1]
+		#elif len(years_aired) == 1:
+		#	fetched_years_aired = years_aired[0] + " - "
 		
 		self.progress_bar.setValue(6)
 		
