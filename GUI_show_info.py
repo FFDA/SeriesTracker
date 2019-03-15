@@ -6,22 +6,24 @@
 import webbrowser
 
 # PyQt5 imports
-from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QComboBox, QMenu
+from PyQt5.QtWidgets import QDialog, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QComboBox, QMenu
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QFont
 from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
 
 from GUI_episode_tracker import CreateShowEpisodesTable
 from GUI_show_info_mark import *
 from GUI_show_info_update import *
+from GUI_show_info_manage import *
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
 
-class OpenShowWindow(QWidget):
+class OpenShowWindow(QDialog):
 	
 	def __init__(self, IMDB_id):
 		super(OpenShowWindow, self).__init__()
 		self.IMDB_id = IMDB_id
 		self.fetch_show_info()
+		self.initUI()
 
 	def fetch_show_info(self):
 		# Fetching data about show and seving them as variables to send to other functions/classes later.
@@ -44,7 +46,7 @@ class OpenShowWindow(QWidget):
 		self.setWindowTitle(self.title)
 		self.setWindowModality(Qt.ApplicationModal) # This function disables other windowsm untill user closes Show Window
 
-		self.layout = QVBoxLayout()
+		self.layout = QGridLayout()
 		
 		self.make_show_info_box()
 		self.episodes_table = CreateShowEpisodesTable(self.IMDB_id) # Initiating episode table
@@ -55,10 +57,14 @@ class OpenShowWindow(QWidget):
 		self.episodes_table.episode_table.scrollToBottom() # Scrolls table view to the bottom
 		
 		self.create_buttons()
+		
+		self.button_ok = QPushButton("OK")
+		self.button_ok.clicked.connect(self.accept)
 
-		self.layout.addWidget(self.show_info_box)
-		self.layout.addWidget(self.button_box)
-		self.layout.addWidget(self.episodes_table.episode_table)
+		self.layout.addWidget(self.show_info_box, 0, 0, 6, 12)
+		self.layout.addWidget(self.button_box, 7, 0, 1, 12)
+		self.layout.addWidget(self.episodes_table.episode_table, 8, 0, 6, 12)
+		self.layout.addWidget(self.button_ok, 14, 11, 1, 1)
 		self.setLayout(self.layout)
 		self.show()
  
@@ -189,6 +195,12 @@ class OpenShowWindow(QWidget):
 		update_button_menu.addAction("show info", self.open_update_show_info)
 		update_button_menu.addAction("single season", self.open_update_single_season)
 		update_button_menu.addAction("last three season", self.open_update_last_3_seasons)
+		
+		# Creates "Manage" button's menu
+		manage_button_menu = QMenu()
+		manage_button_menu.addAction("Fix Season", self.open_fix_season)
+		manage_button_menu.addAction("Change List", self.open_change_list)
+		manage_button_menu.addAction("Delete Show")
 
 		# Other buttons to manage database.
 		mark_as_button = QPushButton("Mark ...")
@@ -197,16 +209,16 @@ class OpenShowWindow(QWidget):
 		update_button = QPushButton("Update ...")
 		update_button.setMinimumSize(150, 31)
 		update_button.setMenu(update_button_menu)
-		fix_season = QPushButton("Fix Season")
-		fix_season.clicked.connect(self.open_fix_season)
-		fix_season.setMinimumSize(150, 31)
+		manage_button = QPushButton("Manage")
+		manage_button.setMenu(manage_button_menu)
+		manage_button.setMinimumSize(150, 31)
 
 		self.button_box.layout.addWidget(season_button_label)
 		self.button_box.layout.addWidget(season_button)
 		self.button_box.layout.insertStretch(2)
 		self.button_box.layout.addWidget(mark_as_button)
 		self.button_box.layout.addWidget(update_button)
-		self.button_box.layout.addWidget(fix_season)
+		self.button_box.layout.addWidget(manage_button)
 		self.button_box.layout.addWidget(open_webpage)
 
 		self.button_box.setLayout(self.button_box.layout)
@@ -281,6 +293,14 @@ class OpenShowWindow(QWidget):
 	def open_update_show_info(self):
 		self.open_update_show_info_window = UpdateShowInfo(self.IMDB_id, self.title)
 		result = self.open_update_show_info_window.exec_()
+		
+		if result == QDialog.Accepted:
+			self.fetch_show_info()
+			self.fill_show_info_box()
+			
+	def open_change_list(self):
+		self.open_change_list_window = ChangeList(self.IMDB_id, self.finished_watching, self.title)
+		result = self.open_change_list_window.exec_()
 		
 		if result == QDialog.Accepted:
 			self.fetch_show_info()

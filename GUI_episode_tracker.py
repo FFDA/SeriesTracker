@@ -101,17 +101,17 @@ class TabWidget(QWidget):
 		# Setting tab2 laytout to vertival
 		self.tab2.layout = QGridLayout()
 
-		shows_table = CreateShowTables()
+		self.shows_table = CreateShowTables()
 
-		shows_table.create_buttons()
-		shows_table.create_table()
-		shows_table.create_filter_box()
-		shows_table.fill_table()
+		self.shows_table.create_buttons()
+		self.shows_table.create_table()
+		self.shows_table.create_filter_box()
+		self.shows_table.fill_table()
 
-		self.tab2.layout.addWidget(shows_table.button_box, 0, 0, 1, 4)
-		self.tab2.layout.addWidget(shows_table.button_add_show_box, 0, 5, 1, 1)
-		self.tab2.layout.addWidget(shows_table.filter_box,1, 0, 1, 6)
-		self.tab2.layout.addWidget(shows_table.shows_table, 2, 0, 10, 6)
+		self.tab2.layout.addWidget(self.shows_table.button_box, 0, 0, 1, 4)
+		self.tab2.layout.addWidget(self.shows_table.button_add_show_box, 0, 5, 1, 1)
+		self.tab2.layout.addWidget(self.shows_table.filter_box,1, 0, 1, 6)
+		self.tab2.layout.addWidget(self.shows_table.shows_table, 2, 0, 10, 6)
 		self.tab2.setLayout(self.tab2.layout)
 
 class CreateEpisodesTable:
@@ -223,11 +223,15 @@ class CreateEpisodesTable:
 			mark_watched_button.clicked.connect(partial(self.mark_watched, IMDB_id, episode.value("episode_IMDB_id")))
 			self.table_model.setItem(row_count, 6, QStandardItem(IMDB_id))
 
-	# Retrieves shows IMDB_id on which was clicked.
+	# Retrieves shows IMDB_id on which was clicked and opens show info window
 	def open_show(self, pos):
 		IMDB_id = self.table_model.data(self.table_model.index(pos.row(), 6))
 		self.show_window = OpenShowWindow(IMDB_id)
-		self.show_window.initUI()
+		
+		result = self.show_window.exec_()
+		
+		#if result == QDialog.Accepted:
+			#self.refill_episode_table()
 
 	def refill_episode_table(self):
 		self.table_model.setRowCount(0)
@@ -586,7 +590,6 @@ class CreateShowEpisodesTableNotWatched(CreateShowEpisodesTable):
 		self.refill_episode_table()
 		
 
-	
 
 if __name__ == "__main__":
 	app = QApplication(sys.argv)
