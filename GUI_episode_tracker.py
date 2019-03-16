@@ -230,10 +230,7 @@ class CreateEpisodesTable:
 		self.show_window.initUI()
 		
 		self.show_window.destroyed.connect(self.refill_episode_table)
-		
-		#if result == QDialog.Accepted:
-		#	self.refill_episode_table()
-			
+
 		
 	def refill_episode_table(self):
 		self.episode_table.doubleClicked.disconnect(self.open_show)
@@ -445,10 +442,9 @@ class CreateShowTables:
 		# Lastly use this index in data() function on filter_model to retrieve information from cell that you/user actually see.
 		IMDB_id = self.filter_model.data(self.filter_model.index(pos.row(), 5))
 		self.show_window = OpenShowWindow(IMDB_id)
-		result = self.show_window.exec_()
+		self.show_window.initUI()
 		
-		if result == QDialog.Accepted:
-			self.refill_table(self.sql_query)
+		self.refill_table(self.sql_query)
 		
 	def open_add_show(self):
 		self.open_add_show_window = AddShow()
