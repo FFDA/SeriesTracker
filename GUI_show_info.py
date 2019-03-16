@@ -22,9 +22,43 @@ class OpenShowWindow(QDialog):
 	def __init__(self, IMDB_id):
 		super(OpenShowWindow, self).__init__()
 		self.IMDB_id = IMDB_id
-		self.fetch_show_info()
+		#self.setAttribute(Qt.WA_DeleteOnClose)
 		self.initUI()
 
+	def initUI(self):
+		# Initiating Show Window
+		
+		self.fetch_show_info() # Getting all info ready
+		
+		self.setGeometry(settings.value("top"), settings.value("left"), settings.value("width"), settings.value("height"))
+		self.setMinimumSize(settings.value("width"), settings.value("height"))
+		self.setWindowTitle(self.title)
+		self.setModal(True)
+
+		self.layout = QVBoxLayout()
+		
+		self.make_show_info_box()
+		
+		self.episodes_table = CreateShowEpisodesTable(self.IMDB_id) # Initiating episode table
+
+		self.episodes_table.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
+		self.episodes_table.create_table()	
+		
+		self.episodes_table.episode_table.scrollToBottom() # Scrolls table view to the bottom
+		
+		self.create_buttons()
+		
+		self.button_ok = QPushButton("OK")
+		self.button_ok.clicked.connect(self.accept)
+
+		self.layout.addWidget(self.show_info_box)
+		self.layout.addWidget(self.button_box)
+		self.layout.addWidget(self.episodes_table.episode_table)
+		self.layout.addWidget(self.button_ok)
+		self.setLayout(self.layout)
+		
+		self.show()
+		
 	def fetch_show_info(self):
 		# Fetching data about show and seving them as variables to send to other functions/classes later.
 		show_info = QSqlQuery("SELECT * FROM shows WHERE IMDB_id = '%s'" % self.IMDB_id)
@@ -38,35 +72,6 @@ class OpenShowWindow(QDialog):
 		self.years_aired = show_info.value("years_aired")
 		self.finished_watching = show_info.value("finished_watching")
 		self.unknown_season = show_info.value("unknown_season")
-
-	def initUI(self):
-		# Initiating Show Window
-		self.setGeometry(settings.value("top"), settings.value("left"), settings.value("width"), settings.value("height"))
-		self.setMinimumSize(settings.value("width"), settings.value("height"))
-		self.setWindowTitle(self.title)
-		self.setWindowModality(Qt.ApplicationModal) # This function disables other windowsm untill user closes Show Window
-
-		self.layout = QGridLayout()
-		
-		self.make_show_info_box()
-		self.episodes_table = CreateShowEpisodesTable(self.IMDB_id) # Initiating episode table
-
-		self.episodes_table.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
-		self.episodes_table.create_table()
-		
-		self.episodes_table.episode_table.scrollToBottom() # Scrolls table view to the bottom
-		
-		self.create_buttons()
-		
-		self.button_ok = QPushButton("OK")
-		self.button_ok.clicked.connect(self.accept)
-
-		self.layout.addWidget(self.show_info_box, 0, 0, 6, 12)
-		self.layout.addWidget(self.button_box, 7, 0, 1, 12)
-		self.layout.addWidget(self.episodes_table.episode_table, 8, 0, 6, 12)
-		self.layout.addWidget(self.button_ok, 14, 11, 1, 1)
-		self.setLayout(self.layout)
-		self.show()
  
 	def make_show_info_box(self):
 		
@@ -240,20 +245,19 @@ class OpenShowWindow(QDialog):
 		else:
 			self.episodes_table.sql_select_shows = "SELECT * FROM %s WHERE season = '%s'" % (self.IMDB_id, season)
 
-		self.episodes_table.refill_episode_table()
+		self.refill_episode_table()
 
 	def open_fix_season(self):
 		self.open_fix_season_window = FixSeason(self.IMDB_id, self.seasons, self.unknown_season, self.title)
 		result = self.open_fix_season_window.exec_()
 		
 		if result == QDialog.Accepted:
-			print("tatatad")
-			#self.refill_episode_table()
+			self.refill_episode_table()
 	
 	def open_mark_episode_as_not_watched(self):
 		self.open_mark_episode_as_not_watched_window = OpenMarkAsNotWatched(self.IMDB_id, self.title, self.seasons, self.unknown_season)
 		self.open_mark_episode_as_not_watched_window.initUI()
-		self.open_mark_episode_as_not_watched_window.destroyed.connect(self.episodes_table.refill_episode_table)
+		self.open_mark_episode_as_not_watched_window.destroyed.connect(self.refill_episode_table)
 		
 	def open_mark_season_as_not_watched(self):
 		self.open_mark_season_as_not_watched_window = MarkSeasonAsNotWatched(self.IMDB_id, self.seasons, self.unknown_season, self.title)
@@ -307,4 +311,6 @@ class OpenShowWindow(QDialog):
 			self.fill_show_info_box()
 	
 	def refill_episode_table(self):
-		self.episodes_table.refill_episode_table()
+
+		self.episodes_table.table_model.setRowCount(0)
+		self.episodes_table.fill_episode_table()

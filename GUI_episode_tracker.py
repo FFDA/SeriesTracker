@@ -227,13 +227,15 @@ class CreateEpisodesTable:
 	def open_show(self, pos):
 		IMDB_id = self.table_model.data(self.table_model.index(pos.row(), 6))
 		self.show_window = OpenShowWindow(IMDB_id)
-		
 		result = self.show_window.exec_()
 		
-		#if result == QDialog.Accepted:
-			#self.refill_episode_table()
-
+		if result == QDialog.Accepted:
+			#print("BumBUmBUM")
+			self.refill_episode_table()
+			
+		
 	def refill_episode_table(self):
+		self.episode_table.doubleClicked.disconnect(self.open_show)
 		self.table_model.setRowCount(0)
 		self.fill_episode_table()
 
@@ -261,7 +263,6 @@ class CreateUpcomingEpisodesTable(CreateEpisodesTable):
 					row_count += 1
 				else:
 				  pass
-
 
 		self.episode_table.doubleClicked.connect(self.open_show)
 		
@@ -443,7 +444,10 @@ class CreateShowTables:
 		# Lastly use this index in data() function on filter_model to retrieve information from cell that you/user actually see.
 		IMDB_id = self.filter_model.data(self.filter_model.index(pos.row(), 5))
 		self.show_window = OpenShowWindow(IMDB_id)
-		self.show_window.initUI()
+		result = self.show_window.exec_()
+		
+		if result == QDialog.Accepted:
+			self.refill_table(self.sql_query)
 		
 	def open_add_show(self):
 		self.open_add_show_window = AddShow()
