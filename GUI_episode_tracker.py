@@ -501,7 +501,6 @@ class CreateShowEpisodesTable(CreateEpisodesTable):
 
 		self.episode_table.sortByColumn(1, Qt.AscendingOrder)
 
-
 	def insert_table_row(self, row_count, episode, IMDB_id):
 
 		# Adding row to the table

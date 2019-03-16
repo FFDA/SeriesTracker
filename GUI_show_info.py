@@ -22,7 +22,6 @@ class OpenShowWindow(QDialog):
 	def __init__(self, IMDB_id):
 		super(OpenShowWindow, self).__init__()
 		self.IMDB_id = IMDB_id
-		#self.setAttribute(Qt.WA_DeleteOnClose)
 		self.initUI()
 
 	def initUI(self):
@@ -35,7 +34,7 @@ class OpenShowWindow(QDialog):
 		self.setWindowTitle(self.title)
 		self.setModal(True)
 
-		self.layout = QVBoxLayout()
+		self.layout = QGridLayout()
 		
 		self.make_show_info_box()
 		
@@ -44,20 +43,20 @@ class OpenShowWindow(QDialog):
 		self.episodes_table.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
 		self.episodes_table.create_table()	
 		
-		self.episodes_table.episode_table.scrollToBottom() # Scrolls table view to the bottom
-		
 		self.create_buttons()
 		
 		self.button_ok = QPushButton("OK")
 		self.button_ok.clicked.connect(self.accept)
 
-		self.layout.addWidget(self.show_info_box)
-		self.layout.addWidget(self.button_box)
-		self.layout.addWidget(self.episodes_table.episode_table)
-		self.layout.addWidget(self.button_ok)
+		self.layout.addWidget(self.show_info_box, 0, 0, 8, 12)
+		self.layout.addWidget(self.button_box, 9, 0, 1, 12)
+		self.layout.addWidget(self.episodes_table.episode_table, 10, 0, 8, 12)
+		self.layout.addWidget(self.button_ok, 18, 11, 1, 1)
 		self.setLayout(self.layout)
 		
 		self.show()
+		
+		self.episodes_table.episode_table.scrollToBottom() # Scrolls table to the bottom
 		
 	def fetch_show_info(self):
 		# Fetching data about show and seving them as variables to send to other functions/classes later.
@@ -314,3 +313,4 @@ class OpenShowWindow(QDialog):
 
 		self.episodes_table.table_model.setRowCount(0)
 		self.episodes_table.fill_episode_table()
+		self.episodes_table.episode_table.scrollToBottom() # Scrolls table to the bottom
