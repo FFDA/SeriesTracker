@@ -204,7 +204,7 @@ class OpenShowWindow(QDialog):
 		manage_button_menu = QMenu()
 		manage_button_menu.addAction("Fix Season", self.open_fix_season)
 		manage_button_menu.addAction("Change List", self.open_change_list)
-		manage_button_menu.addAction("Delete Show")
+		manage_button_menu.addAction("Delete Show", self.open_delete_show)
 
 		# Other buttons to manage database.
 		mark_as_button = QPushButton("Mark ...")
@@ -254,6 +254,7 @@ class OpenShowWindow(QDialog):
 			self.refill_episode_table()
 	
 	def open_mark_episode_as_not_watched(self):
+		# This function detects if window was closed and refill episode table.
 		self.open_mark_episode_as_not_watched_window = OpenMarkAsNotWatched(self.IMDB_id, self.title, self.seasons, self.unknown_season)
 		self.open_mark_episode_as_not_watched_window.initUI()
 		self.open_mark_episode_as_not_watched_window.destroyed.connect(self.refill_episode_table)
@@ -308,6 +309,15 @@ class OpenShowWindow(QDialog):
 		if result == QDialog.Accepted:
 			self.fetch_show_info()
 			self.fill_show_info_box()
+	
+	def open_delete_show(self):
+		# This function will open a window to delete all the data from database.
+		# After deletion it SHOULD close ShowInfo window too.
+		self.open_delete_show_window = DeleteShow(self.IMDB_id, self.title)
+		result = self.open_delete_show_window.exec_()
+		
+		if result == QDialog.Accepted:
+			self.accept() # SHOULD close the window
 	
 	def refill_episode_table(self):
 

@@ -226,3 +226,44 @@ class ChangeList(QDialog):
 		sql_change_list.exec_()
 		
 		self.accept()
+
+
+class DeleteShow(QDialog):
+	
+	def __init__(self, IMDB_id, title):
+		super(DeleteShow, self).__init__()
+		self.IMDB_id = IMDB_id
+		self.title = title
+		
+		self.initUI()
+		
+	def initUI(self):
+		self.setGeometry(400, 600, 400, 300)
+		self.setModal(True)
+		self.setWindowTitle("Delete %s" % self.title)
+		self.layout = QGridLayout()
+		
+		self.message = QLabel("All data about %s will be deleted" % self.title)
+		self.message.setWordWrap(True)
+		self.message.setAlignment(Qt.AlignHCenter)
+		
+		self.button_cancel = QPushButton("Cancel")
+		self.button_cancel.clicked.connect(self.reject)
+		self.button_delete = QPushButton("Delete")
+		self.button_delete.clicked.connect(self.delete_show)
+		
+		self.layout.addWidget(self.message, 0, 0, 1, 3)
+		self.layout.addWidget(self.button_cancel, 2, 0, 1, 1)
+		self.layout.addWidget(self.button_delete, 2, 2, 1, 1)
+		
+		self.setLayout(self.layout)	
+		self.show()
+		
+	def delete_show(self):
+		
+		sql_delete_show_from_shows_table = QSqlQuery("DELETE FROM shows WHERE IMDB_id = '%s'" % self.IMDB_id)
+		sql_delete_show_from_shows_table.exec_()
+		
+		sql_delete_show_table = QSqlQuery("DROP TABLE %s" % self.IMDB_id)
+		sql_delete_show_table.exec_()
+		self.accept()

@@ -5,6 +5,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtSql import QSqlQuery
 
 from imdbpie import Imdb
+import re
 import IMDB_id_validation as validate
  
 class AddShow(QDialog):
