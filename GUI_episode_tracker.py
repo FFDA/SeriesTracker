@@ -117,6 +117,8 @@ class TabWidget(QWidget):
 		self.tab2.layout.addWidget(self.shows_table.shows_table, 2, 0, 10, 6)
 		self.tab2.setLayout(self.tab2.layout)
 		
+
+		
 	def tab_changed(self, index):
 		
 		if index == 0:
@@ -328,7 +330,7 @@ class CreateShowTables:
 		# self.table_label_text = "All Shows"
 		self.horizontal_header_labels = ["Title", "Seasons", "Status", "Years aired", "Synopsis"]
 		self.table_column_count = 6
-		self.sql_query = "SELECT * FROM shows"
+		self.sql_query = "SELECT * FROM shows ORDER BY title ASC"
 	
 	def create_buttons(self):
 
@@ -371,10 +373,10 @@ class CreateShowTables:
 		self.button_box.layout.addWidget(btn_plan_to_watch)
 
 		# Linking buttons with function and passing different sql_query
-		btn_all_shows.clicked.connect(partial(self.refill_table, "SELECT * FROM shows"))
-		btn_watchlist.clicked.connect(partial(self.refill_table, "SELECT * FROM shows WHERE finished_watching = 0"))
-		btn_finished_watching.clicked.connect(partial(self.refill_table, "SELECT * FROM shows WHERE  finished_watching = 1"))
-		btn_plan_to_watch.clicked.connect(partial(self.refill_table, "SELECT * FROM shows WHERE finished_watching = 2"))
+		btn_all_shows.clicked.connect(partial(self.refill_table, "SELECT * FROM shows ORDER BY title ASC"))
+		btn_watchlist.clicked.connect(partial(self.refill_table, "SELECT * FROM shows WHERE finished_watching = 0 ORDER BY title ASC"))
+		btn_finished_watching.clicked.connect(partial(self.refill_table, "SELECT * FROM shows WHERE  finished_watching = 1 ORDER BY title ASC"))
+		btn_plan_to_watch.clicked.connect(partial(self.refill_table, "SELECT * FROM shows WHERE finished_watching = 2 ORDER BY title ASC"))
 
 		self.button_box.setLayout(self.button_box.layout)
 
@@ -398,7 +400,7 @@ class CreateShowTables:
 		self.filter_model = QSortFilterProxyModel()
 		self.filter_model.setSourceModel(self.table_model)
 		self.filter_model.setFilterKeyColumn(0) # Setting target column of the filter function. It can be changed to -1 to from all columns.
-		self.filter_model.setFilterCaseSensitivity(Qt.CaseInsensitive) # Making filter regex not case sensitive
+		self.filter_model.setFilterCaseSensitivity(Qt.CaseInsensitive) # Making filter regex not case sensitive.
 
 		# TableView model that actually displays show table
 		self.shows_table = QTableView()
@@ -440,6 +442,7 @@ class CreateShowTables:
 			row_count += 1
 
 		self.shows_table.doubleClicked.connect(self.open_show)
+		
 		
 	def refill_table(self, new_query):
 		self.sql_query = new_query
