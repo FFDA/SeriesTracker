@@ -117,8 +117,7 @@ class TabWidget(QWidget):
 		self.tab2.layout.addWidget(self.shows_table.shows_table, 2, 0, 10, 6)
 		self.tab2.setLayout(self.tab2.layout)
 		
-
-		
+				
 	def tab_changed(self, index):
 		
 		if index == 0:
@@ -126,6 +125,7 @@ class TabWidget(QWidget):
 			self.next_episodes.refill_episode_table()
 		else:
 			self.shows_table.refill_table(self.shows_table.sql_query)
+			self.shows_table.filter_box.setFocus() # Auto focuses on Filter box every time user clicks on Shows tab.
 		
 
 class CreateEpisodesTable:
@@ -387,7 +387,6 @@ class CreateShowTables:
 		self.filter_box = QLineEdit()
 		self.filter_box.setClearButtonEnabled(True)
 		self.filter_box.setPlaceholderText("Start typing show's title")
-		# self.filter_box.setFocusPolicy(Qt.StrongFocus)
 		self.filter_box.textChanged.connect(self.filter_model.setFilterRegExp)
 
 	def create_table(self):
