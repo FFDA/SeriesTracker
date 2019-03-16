@@ -54,6 +54,9 @@ class TabWidget(QWidget):
 		self.tabs.addTab(self.tab1, "Recent Episodes")
 		self.tabs.addTab(self.tab2, "Shows")
 		
+		# Detecting if tab changed and innitaing function.
+		self.tabs.currentChanged.connect(self.tab_changed)
+		
 		# Telling to look for a function that will set information in the widget.
 		self.tab1UI()
 		self.tab2UI()
@@ -69,29 +72,29 @@ class TabWidget(QWidget):
 		self.tab1.layout = QVBoxLayout()
 		
 		# Setting up Latest Episodes table
-		latest_episodes = CreateEpisodesTable()
-		latest_episodes.label_text = "Latest Episodes"
-		latest_episodes.sql_select_shows = "SELECT * FROM shows WHERE finished_watching = 0"
-		latest_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE LENGTH(air_date) > 4 AND air_date < '%s' ORDER BY air_date ASC"
-		latest_episodes.create_label()
-		latest_episodes.create_table()
-		latest_episodes.fill_episode_table()
+		self.latest_episodes = CreateEpisodesTable()
+		self.latest_episodes.label_text = "Latest Episodes"
+		self.latest_episodes.sql_select_shows = "SELECT * FROM shows WHERE finished_watching = 0"
+		self.latest_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE LENGTH(air_date) > 4 AND air_date < '%s' ORDER BY air_date ASC"
+		self.latest_episodes.create_label()
+		self.latest_episodes.create_table()
+		self.latest_episodes.fill_episode_table()
 		
 		# Setting up Next Episodes table
-		next_episodes = CreateUpcomingEpisodesTable()
-		next_episodes.label_text = "Upcoming Episodes"
-		next_episodes.sql_select_shows = "SELECT * FROM shows WHERE finished_watching = 0"
-		next_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE LENGTH(air_date) > 4 AND air_date >= '%s' ORDER BY air_date ASC"
-		next_episodes.create_label()
-		next_episodes.create_table()
-		next_episodes.fill_episode_table()
+		self.next_episodes = CreateUpcomingEpisodesTable()
+		self.next_episodes.label_text = "Upcoming Episodes"
+		self.next_episodes.sql_select_shows = "SELECT * FROM shows WHERE finished_watching = 0"
+		self.next_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE LENGTH(air_date) > 4 AND air_date >= '%s' ORDER BY air_date ASC"
+		self.next_episodes.create_label()
+		self.next_episodes.create_table()
+		self.next_episodes.fill_episode_table()
 		
 		# Adding label to the tab1 layout
-		self.tab1.layout.addWidget(latest_episodes.episode_table_label)
+		self.tab1.layout.addWidget(self.latest_episodes.episode_table_label)
 		# Adding table to the tab1 layout
-		self.tab1.layout.addWidget(latest_episodes.episode_table)
-		self.tab1.layout.addWidget(next_episodes.episode_table_label)
-		self.tab1.layout.addWidget(next_episodes.episode_table)
+		self.tab1.layout.addWidget(self.latest_episodes.episode_table)
+		self.tab1.layout.addWidget(self.next_episodes.episode_table_label)
+		self.tab1.layout.addWidget(self.next_episodes.episode_table)
 		# Adding setting tab1 laytout
 		self.tab1.setLayout(self.tab1.layout)
 
@@ -113,6 +116,15 @@ class TabWidget(QWidget):
 		self.tab2.layout.addWidget(self.shows_table.filter_box,1, 0, 1, 6)
 		self.tab2.layout.addWidget(self.shows_table.shows_table, 2, 0, 10, 6)
 		self.tab2.setLayout(self.tab2.layout)
+		
+	def tab_changed(self, index):
+		
+		if index == 0:
+			self.latest_episodes.refill_episode_table()
+		else:
+			self.next_episodes.refill_episode_table()
+		
+		
 
 class CreateEpisodesTable:
 
@@ -444,7 +456,7 @@ class CreateShowTables:
 		self.show_window = OpenShowWindow(IMDB_id)
 		self.show_window.initUI()
 		
-		self.refill_table(self.sql_query)
+		self.show_window.destroyed.connect(partial(self.refill_table, self.sql_query))
 		
 	def open_add_show(self):
 		self.open_add_show_window = AddShow()

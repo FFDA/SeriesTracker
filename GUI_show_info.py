@@ -22,7 +22,6 @@ class OpenShowWindow(QWidget):
 	def __init__(self, IMDB_id):
 		super(OpenShowWindow, self).__init__()
 		self.IMDB_id = IMDB_id
-		#self.initUI()
 
 	def initUI(self):
 		# Initiating Show Window
@@ -32,7 +31,7 @@ class OpenShowWindow(QWidget):
 		self.setGeometry(settings.value("top"), settings.value("left"), settings.value("width"), settings.value("height"))
 		self.setMinimumSize(settings.value("width"), settings.value("height"))
 		self.setWindowTitle(self.title)
-		#self.setModal(True)
+		self.setWindowModality(Qt.ApplicationModal)
 
 		self.layout = QGridLayout()
 		
