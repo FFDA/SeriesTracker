@@ -283,11 +283,9 @@ class OpenMarkAsNotWatched(QWidget):
 
 		self.layout = QVBoxLayout()
 		
-		self.episodes_table = CreateShowEpisodesTableNotWatched(self.IMDB_id)
+		self.episodes_table = MarkNotWatchedEpisodeTable(self.IMDB_id)
 		self.episodes_table.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
 		self.episodes_table.create_table()
-		
-		self.episodes_table.episode_table.scrollToBottom()
 		
 		self.create_buttons()
 		
@@ -295,6 +293,8 @@ class OpenMarkAsNotWatched(QWidget):
 		self.layout.addWidget(self.episodes_table.episode_table)
 		self.setLayout(self.layout)
 		self.show()
+		
+		self.episodes_table.episode_table.scrollToBottom()
 
 	def create_buttons(self):
 		
@@ -340,3 +340,12 @@ class OpenMarkAsNotWatched(QWidget):
 			self.episodes_table.sql_select_shows = "SELECT * FROM %s WHERE season = '%s'" % (self.IMDB_id, season)
 
 		self.episodes_table.refill_episode_table()
+
+
+class MarkNotWatchedEpisodeTable(CreateShowEpisodesTableNotWatched):
+	
+	def refill_episode_table(self):
+
+		self.table_model.setRowCount(0)
+		self.fill_episode_table()
+		self.episode_table.scrollToBottom()

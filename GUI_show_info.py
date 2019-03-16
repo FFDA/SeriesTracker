@@ -17,28 +17,28 @@ from GUI_show_info_manage import *
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
 
-class OpenShowWindow(QDialog):
+class OpenShowWindow(QWidget):
 	
 	def __init__(self, IMDB_id):
 		super(OpenShowWindow, self).__init__()
 		self.IMDB_id = IMDB_id
-		self.initUI()
+		#self.initUI()
 
 	def initUI(self):
 		# Initiating Show Window
-		
+		self.setAttribute(Qt.WA_DeleteOnClose)
 		self.fetch_show_info() # Getting all info ready
 		
 		self.setGeometry(settings.value("top"), settings.value("left"), settings.value("width"), settings.value("height"))
 		self.setMinimumSize(settings.value("width"), settings.value("height"))
 		self.setWindowTitle(self.title)
-		self.setModal(True)
+		#self.setModal(True)
 
 		self.layout = QGridLayout()
 		
 		self.make_show_info_box()
 		
-		self.episodes_table = CreateShowEpisodesTable(self.IMDB_id) # Initiating episode table
+		self.episodes_table = ShowInfoEpisodesTable(self.IMDB_id) # Initiating episode table
 
 		self.episodes_table.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
 		self.episodes_table.create_table()	
@@ -46,7 +46,7 @@ class OpenShowWindow(QDialog):
 		self.create_buttons()
 		
 		self.button_ok = QPushButton("OK")
-		self.button_ok.clicked.connect(self.accept)
+		self.button_ok.clicked.connect(self.close)
 
 		self.layout.addWidget(self.show_info_box, 0, 0, 8, 12)
 		self.layout.addWidget(self.button_box, 9, 0, 1, 12)
@@ -317,10 +317,18 @@ class OpenShowWindow(QDialog):
 		result = self.open_delete_show_window.exec_()
 		
 		if result == QDialog.Accepted:
-			self.accept() # SHOULD close the window
+			self.close() # SHOULD close the window
 	
 	def refill_episode_table(self):
 
 		self.episodes_table.table_model.setRowCount(0)
 		self.episodes_table.fill_episode_table()
 		self.episodes_table.episode_table.scrollToBottom() # Scrolls table to the bottom
+
+class ShowInfoEpisodesTable(CreateShowEpisodesTable):
+	
+	def refill_episode_table(self):
+
+		self.table_model.setRowCount(0)
+		self.fill_episode_table()
+		self.episode_table.scrollToBottom()

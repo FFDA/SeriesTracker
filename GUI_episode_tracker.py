@@ -227,11 +227,12 @@ class CreateEpisodesTable:
 	def open_show(self, pos):
 		IMDB_id = self.table_model.data(self.table_model.index(pos.row(), 6))
 		self.show_window = OpenShowWindow(IMDB_id)
-		result = self.show_window.exec_()
+		self.show_window.initUI()
 		
-		if result == QDialog.Accepted:
-			#print("BumBUmBUM")
-			self.refill_episode_table()
+		self.show_window.destroyed.connect(self.refill_episode_table)
+		
+		#if result == QDialog.Accepted:
+		#	self.refill_episode_table()
 			
 		
 	def refill_episode_table(self):
