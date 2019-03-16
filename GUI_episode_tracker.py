@@ -124,7 +124,6 @@ class TabWidget(QWidget):
 		else:
 			self.next_episodes.refill_episode_table()
 		
-		
 
 class CreateEpisodesTable:
 

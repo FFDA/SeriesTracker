@@ -429,7 +429,7 @@ class UpdateShowInfo(QDialog):
 		self.info_box.append("Starting updating show %s info. Pease be patient" % self.title)
 			
 		# Retrieving show values that will be checked from the database.
-		sql_select_show = QSqlQuery("SELECT seasons, years_aired, finished_airing, unknown_season FROM shows WHERE IMDB_id = '%s'" % IMDB_id)
+		sql_select_show = QSqlQuery("SELECT seasons, years_aired, running_time, finished_airing, unknown_season FROM shows WHERE IMDB_id = '%s'" % IMDB_id)
 		
 		sql_select_show.first()
 		
@@ -438,6 +438,7 @@ class UpdateShowInfo(QDialog):
 		current_unknown_season = sql_select_show.value("unknown_season")
 		current_years_aired = sql_select_show.value("years_aired")
 		current_finished_airing = sql_select_show.value("finished_airing")
+		current_running_time = sql_select_show.value("running_time")
 		self.progress_bar.setValue(1)
 		
 		# Checking if there is at least one episode that belongs to Unknown season
@@ -474,6 +475,11 @@ class UpdateShowInfo(QDialog):
 		
 		self.progress_bar.setValue(5)
 		
+		try:
+			fetched_running_time = show_info_year["runningTimeInMinutes"]
+		except KeyError:
+			fetched_running_time = 0
+		
 		# Setting years airing that will be inserted into database.
 		if show_start_year == show_end_year:
 			fetched_years_aired = show_start_year		
@@ -508,6 +514,12 @@ class UpdateShowInfo(QDialog):
 			self.info_box.append("Updated season count from {old_season_count} to {new_season_count}. You should update show's seasons next".format(old_season_count = current_seasons, new_season_count = fetched_season_count))
 			something_updated_trigger = 1
 			
+		if current_running_time != fetched_running_time:
+			sql_update_running_time = QSqlQuery("UPDATE shows SET running_time = {running_time} WHERE IMDB_ID = '{show_id}'".format(running_time = fetched_running_time, show_id = IMDB_id))
+			sql_update_running_time.exec_()
+			self.info_box.append("Show's running time was changed from {old_running_time} to {new_running_time}".format(old_running_time = current_running_time, new_running_time = fetched_running_time))
+			something_updated_trigger = 1
+			
 		#This if statement tries to check if there is and Unknown season in database and IMDB, but not ignore if there is and episodes with unknown season.
 		if current_unknown_season != fetched_unknown_season and unknown_season_episode_exists == 1:
 			self.info_box.append("It appears that all episodes in 'Unknown' season where removed or updated")
@@ -519,7 +531,8 @@ class UpdateShowInfo(QDialog):
 			self.info_box.append("'Unknown season was added to show's season list.")
 			self.info_box.append("You should update shows seasons")
 			something_updated_trigger = 1
-		
+			
+			
 		self.progress_bar.setValue(7)
 
 		self.info_box.append("")
