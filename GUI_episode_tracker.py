@@ -123,8 +123,9 @@ class TabWidget(QWidget):
 		
 		if index == 0:
 			self.latest_episodes.refill_episode_table()
-		else:
 			self.next_episodes.refill_episode_table()
+		else:
+			self.shows_table.refill_table(self.shows_table.sql_query)
 		
 
 class CreateEpisodesTable:

@@ -51,7 +51,10 @@ class UpdateSingleSeason(QDialog):
 		self.layout.addWidget(self.update_button, 8, 2, 1, 1)
 		self.layout.addWidget(self.ok, 8, 3, 1, 1)
 		self.setLayout(self.layout)
-		self.show() 
+		self.show()
+		
+		self.selected_season = self.seasons	# Set selected season as last one
+		self.season_button.setCurrentIndex(self.seasons) # set last season as selected one in the combo box
 
 	def create_confirmation_buttons(self):
 				
@@ -59,7 +62,7 @@ class UpdateSingleSeason(QDialog):
 		self.ok = QPushButton("OK")
 		self.ok.setDisabled(True) # Disables OK button. It will be enabled after update operation is finished.
 		self.update_button = QPushButton("Update Season")
-		self.update_button.setDisabled(True) # Disables Update Season button. It will be enabled after user set a season to update.
+		#self.update_button.setDisabled(True) # Disables Update Season button. It will be enabled after user set a season to update.
 		
 		self.cancel.clicked.connect(self.reject) #This button rejects the action and closes window withour changing anything in database.
 		self.ok.clicked.connect(self.accept)
