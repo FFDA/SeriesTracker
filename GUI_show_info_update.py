@@ -390,7 +390,8 @@ class UpdateShowInfo(QDialog):
 		
 	def initUI(self):
 		# All UI disign is in here.
-		self.resize(400, 600, 800, 500)
+		self.resize(800, 500)
+		center(self)
 		self.setModal(True)
 		self.setWindowTitle(self.window_title)
 		self.layout = QGridLayout()
@@ -432,7 +433,7 @@ class UpdateShowInfo(QDialog):
 		something_updated_trigger = 0
 		fetched_finished_airing = 2 # Default value for finished_airing. It will be changed later on if it is detected that show finished airing.
 		
-		self.info_box.append("Starting updating show %s info. Pease be patient" % self.title)
+		self.info_box.append("Starting updating show %s info. Please be patient" % self.title)
 			
 		# Retrieving show values that will be checked from the database.
 		sql_select_show = QSqlQuery("SELECT seasons, years_aired, running_time, finished_airing, unknown_season FROM shows WHERE IMDB_id = '%s'" % IMDB_id)
