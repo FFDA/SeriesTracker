@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 
 from imdbpie import Imdb
+import IMDB_id_validation as validate
 
 from PyQt5.QtWidgets import QDialog, QPushButton, QProgressBar, QComboBox, QLabel, QProgressBar, QGridLayout, QTextEdit
 from PyQt5.QtSql import QSqlQuery
@@ -83,6 +84,7 @@ class FixSeason(QDialog):
 		self.season_button.setMinimumSize(95, 31)
 		self.season_button.insertItems(0, season_list) # Adding all the options from season_list to the drop down menu
 		self.season_button.currentTextChanged.connect(self.setting_up_fix) # Detects if user chooses different season and sends value to print_season function
+		self.season_button.setFocusPolicy(Qt.NoFocus)
 		
 		self.season_button_label = QLabel("Season")
 		
@@ -174,7 +176,7 @@ class ChangeList(QDialog):
 		
 	def initUI(self):
 		# All UI disign is in here.
-		self.setGeometry(400, 600, 800, 500)
+		self.setGeometry(400, 600, 400, 300)
 		self.setModal(True)
 		self.setWindowTitle("Change %s list" % self.title)
 		self.layout = QGridLayout()
@@ -189,6 +191,7 @@ class ChangeList(QDialog):
 		self.combo_box.addItems(self.combo_box_list)
 		self.combo_box.setCurrentIndex(self.current_list) # Setting combo box index to make "Plan to Watch" as default option.
 		self.combo_box.currentIndexChanged.connect(self.setupChange)
+		self.combo_box.setFocusPolicy(Qt.NoFocus)
 		
 		self.message = QLabel("Select a different list")
 		self.message.setAlignment(Qt.AlignCenter)

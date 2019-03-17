@@ -394,6 +394,7 @@ class UpdateShowInfo(QDialog):
 		self.layout = QGridLayout()
 		
 		self.message = QLabel("Show %s will be updated" % self.title)
+		self.message.setAlignment(Qt.AlignCenter)
 		self.info_box = QTextEdit()
 		self.info_box.setReadOnly(True)
 		
