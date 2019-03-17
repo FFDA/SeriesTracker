@@ -33,14 +33,23 @@ class MarkSeasonAsNotWatched(QDialog):
 		self.setWindowTitle(self.window_title)
 		self.setModal(True)
 		
-		self.layout = QVBoxLayout()
+		self.layout = QGridLayout()
 		self.create_buttons()
 		self.message = QLabel("You haven't selected a season")
-		self.create_confirmation_buttons()
+		self.message.setAlignment(Qt.AlignCenter)
+		#self.create_confirmation_buttons()#
 		
-		self.layout.addWidget(self.button_box)
-		self.layout.addWidget(self.message)
-		self.layout.addWidget(self.confirmation_button_box)
+		# Confirmation buttonss		
+		self.cancel = QPushButton("Cancel")
+		self.confirm = QPushButton("Mark as Watched")	
+		self.cancel.clicked.connect(self.reject)
+		self.confirm.clicked.connect(self.mark_season_as_watched)
+		
+		self.layout.addWidget(self.season_button_label, 0, 1, 1, 1)
+		self.layout.addWidget(self.season_button, 0, 2, 1, 1)
+		self.layout.addWidget(self.message, 1, 0, 1, 4)
+		self.layout.addWidget(self.cancel, 2, 0, 1, 1)
+		self.layout.addWidget(self.confirm, 2, 3, 1, 1)
 		self.setLayout(self.layout)
 	
 	def message_box_text(self, season):
@@ -52,8 +61,8 @@ class MarkSeasonAsNotWatched(QDialog):
 	
 	def create_buttons(self):
 		
-		self.button_box = QGroupBox()
-		self.button_box.layout = QHBoxLayout()
+		#self.button_box = QGroupBox()
+		#self.button_box.layout = QHBoxLayout()
 
 		# Season list that contains all season numbers in string form that will be used later on to populate drop down menu for user to choose a season from.
 		# First value has "All" that prints all show's seasons.
@@ -68,33 +77,28 @@ class MarkSeasonAsNotWatched(QDialog):
 		if self.unknown_season == 1:
 			season_list.append("Unknown")
 
-		season_button = QComboBox()
-		season_button.setMinimumSize(95, 31)
-		season_button.insertItems(0, season_list) # Adding all the options from season_list to the drop down menu
-		season_button.currentTextChanged.connect(self.message_box_text) # Detects if user chooses different season and sends value to print_season function
+		self.season_button = QComboBox()
+		self.season_button.setMinimumSize(95, 31)
+		self.season_button.insertItems(0, season_list) # Adding all the options from season_list to the drop down menu
+		self.season_button.currentTextChanged.connect(self.message_box_text) # Detects if user chooses different season and sends value to print_season function
 		
-		season_button_label = QLabel("Season")
+		self.season_button_label = QLabel("Season")
 		
-		self.button_box.layout.addWidget(season_button_label)
-		self.button_box.layout.addWidget(season_button)
+		#self.button_box.layout.addWidget(season_button_label)
+		#self.button_box.layout.addWidget(season_button)
 				
-		self.button_box.setLayout(self.button_box.layout)
+		#self.button_box.setLayout(self.button_box.layout)
 		
-	def create_confirmation_buttons(self):
+#	def create_confirmation_buttons(self):
 		
-		self.confirmation_button_box = QGroupBox()
-		self.confirmation_button_box.layout = QHBoxLayout()
+		#self.confirmation_button_box = QGroupBox()
+		#self.confirmation_button_box.layout = QHBoxLayout()
+
 		
-		cancel = QPushButton("Cancel")
-		confirm = QPushButton("Mark as Watched")
+		#self.confirmation_button_box.layout.addWidget(cancel)
+		#self.confirmation_button_box.layout.addWidget(confirm)
 		
-		cancel.clicked.connect(self.reject)
-		confirm.clicked.connect(self.mark_season_as_watched)
-		
-		self.confirmation_button_box.layout.addWidget(cancel)
-		self.confirmation_button_box.layout.addWidget(confirm)
-		
-		self.confirmation_button_box.setLayout(self.confirmation_button_box.layout)
+		#self.confirmation_button_box.setLayout(self.confirmation_button_box.layout)
 		
 	def mark_season_as_watched(self):
 		if self.sql_season_mark == "":
@@ -279,7 +283,7 @@ class OpenMarkAsNotWatched(QWidget):
 		self.setGeometry(settings.value("top"), settings.value("left"), settings.value("width"), settings.value("height"))
 		self.setMinimumSize(settings.value("width"), settings.value("height"))
 		self.setWindowTitle(self.title)
-		self.setWindowModality(Qt.ApplicationModal) # This function disables other windowsm untill user closes Show Window
+		self.setWindowModality(Qt.ApplicationModal) # This function disables other windows untill user closes Show Window
 
 		self.layout = QVBoxLayout()
 		
@@ -299,7 +303,7 @@ class OpenMarkAsNotWatched(QWidget):
 	def create_buttons(self):
 		
 		self.button_box = QGroupBox()
-		self.button_box.layout = QHBoxLayout()
+		self.button_box.layout = QGridLayout()
 
 		# Season list that contains all season numbers in string form that will be used later on to populate drop down menu for user to choose a season from.
 		# First value has "All" that prints all show's seasons.
@@ -316,13 +320,14 @@ class OpenMarkAsNotWatched(QWidget):
 
 		season_button = QComboBox()
 		season_button.setMinimumSize(95, 31)
+		season_button.setFocusPolicy(Qt.NoFocus)
 		season_button.insertItems(0, season_list) # Adding all the options from season_list to the drop down menu
 		season_button.currentTextChanged.connect(self.print_season) # Detects if user chooses different season and send value to print_season function
 		
 		season_button_label = QLabel("Season")
 		
-		self.button_box.layout.addWidget(season_button_label)
-		self.button_box.layout.addWidget(season_button)
+		self.button_box.layout.addWidget(season_button_label, 0, 1, Qt.AlignRight)
+		self.button_box.layout.addWidget(season_button, 0, 2, Qt.AlignLeft)
 		
 		self.button_box.setLayout(self.button_box.layout)
 	
