@@ -6,7 +6,7 @@
 import webbrowser
 
 # PyQt5 imports
-from PyQt5.QtWidgets import QDialog, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QComboBox, QMenu
+from PyQt5.QtWidgets import QDialog, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QComboBox, QMenu, QDesktopWidget
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QFont
 from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
 
@@ -14,6 +14,7 @@ from GUI_episode_tracker import CreateShowEpisodesTable
 from GUI_show_info_mark import *
 from GUI_show_info_update import *
 from GUI_show_info_manage import *
+from GUI_misc import center
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
 
@@ -27,8 +28,8 @@ class OpenShowWindow(QWidget):
 		# Initiating Show Window
 		self.setAttribute(Qt.WA_DeleteOnClose)
 		self.fetch_show_info() # Getting all info ready
-		
-		self.setGeometry(settings.value("top"), settings.value("left"), settings.value("width"), settings.value("height"))
+		self.resize(settings.value("width"), settings.value("height"))
+		center(self)
 		self.setMinimumSize(settings.value("width"), settings.value("height"))
 		self.setWindowTitle(self.title)
 		self.setWindowModality(Qt.ApplicationModal)
@@ -56,7 +57,7 @@ class OpenShowWindow(QWidget):
 		self.show()
 		
 		self.episodes_table.episode_table.scrollToBottom() # Scrolls table to the bottom
-		
+	
 	def fetch_show_info(self):
 		# Fetching data about show and seving them as variables to send to other functions/classes later.
 		show_info = QSqlQuery("SELECT * FROM shows WHERE IMDB_id = '%s'" % self.IMDB_id)

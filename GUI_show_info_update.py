@@ -3,6 +3,7 @@
 from imdbpie import Imdb
 
 import IMDB_id_validation as validate
+from GUI_misc import center
 import re
 
 from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QLabel, QProgressBar, QTextEdit, QGridLayout
@@ -25,7 +26,8 @@ class UpdateSingleSeason(QDialog):
 		self.initUI()
 		
 	def initUI(self):
-		self.setGeometry(400, 600, 800, 500)
+		self.resize(800, 500)
+		center(self)
 		self.setModal(True)
 		self.setWindowTitle(self.window_title)
 		self.layout = QGridLayout()
@@ -308,7 +310,7 @@ class UpdateThreeSeasons(UpdateSingleSeason):
 		self.initUI()
 
 	def initUI(self):
-		self.setGeometry(400, 600, 800, 500)
+		self.resize(400, 600, 800, 500)
 		self.setModal(True)
 		self.setWindowTitle(self.window_title)
 		self.layout = QGridLayout()
@@ -388,7 +390,7 @@ class UpdateShowInfo(QDialog):
 		
 	def initUI(self):
 		# All UI disign is in here.
-		self.setGeometry(400, 600, 800, 500)
+		self.resize(400, 600, 800, 500)
 		self.setModal(True)
 		self.setWindowTitle(self.window_title)
 		self.layout = QGridLayout()

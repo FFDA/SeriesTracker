@@ -15,6 +15,7 @@ from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
 from GUI_show_info import *
 from GUI_database import *
 from GUI_add_show import *
+from GUI_misc import center
 
 # PyQt5 settings
 settings = QSettings("SeriesTracker", "SeriesTracker")
@@ -30,13 +31,13 @@ class mainWindow(QMainWindow):
 		self.initUI()
 
 	def initUI(self):
-		self.setGeometry(settings.value("top"), settings.value("left"), settings.value("width"), settings.value("height"))
-		# self.setgeometry(self.left, self.top, self.width, self.height)
+		#self.setGeometry(settings.value("top"), settings.value("left"), settings.value("width"), settings.value("height"))
+		self.resize(settings.value("width"), settings.value("height"))	
+		center(self)
 		self.setWindowTitle("Series Episode Tracker")
 		self.tab_widget = TabWidget(self)
 		self.setCentralWidget(self.tab_widget)
 		self.show()
-
 
 class TabWidget(QWidget):
 	

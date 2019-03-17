@@ -2,6 +2,7 @@
 
 from imdbpie import Imdb
 import IMDB_id_validation as validate
+from GUI_misc import center
 
 from PyQt5.QtWidgets import QDialog, QPushButton, QProgressBar, QComboBox, QLabel, QProgressBar, QGridLayout, QTextEdit
 from PyQt5.QtSql import QSqlQuery
@@ -24,7 +25,8 @@ class FixSeason(QDialog):
 		
 	def initUI(self):
 		# All UI disign is in here.
-		self.setGeometry(400, 600, 800, 500)
+		self.resize(800, 500)
+		center(self)
 		self.setModal(True)
 		self.setWindowTitle("Choose season of %s to fix" % self.title)
 		self.layout = QGridLayout()
@@ -176,7 +178,8 @@ class ChangeList(QDialog):
 		
 	def initUI(self):
 		# All UI disign is in here.
-		self.setGeometry(400, 600, 400, 300)
+		self.resize(400, 300)
+		center(self)
 		self.setModal(True)
 		self.setWindowTitle("Change %s list" % self.title)
 		self.layout = QGridLayout()
@@ -241,8 +244,9 @@ class DeleteShow(QDialog):
 		self.initUI()
 		
 	def initUI(self):
-		self.setGeometry(400, 600, 400, 300)
+		self.resize(400, 300)
 		self.setModal(True)
+		center(self)
 		self.setWindowTitle("Delete %s" % self.title)
 		self.layout = QGridLayout()
 		

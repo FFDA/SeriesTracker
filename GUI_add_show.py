@@ -7,6 +7,7 @@ from PyQt5.QtSql import QSqlQuery
 from imdbpie import Imdb
 import re
 import IMDB_id_validation as validate
+from GUI_misc import center
  
 class AddShow(QDialog):
 	 
@@ -16,7 +17,8 @@ class AddShow(QDialog):
 		self.initUI()
 		
 	def initUI(self):
-		self.setGeometry(400, 600, 800, 500)
+		self.resize(800, 500)
+		center(self)
 		self.setModal(True)
 		self.setWindowTitle("Add Show")
 		self.layout = QGridLayout()

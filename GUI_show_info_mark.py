@@ -12,6 +12,7 @@ from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, QSize
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 
 from GUI_episode_tracker import CreateShowEpisodesTableNotWatched
+from GUI_misc import center
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
 
@@ -26,10 +27,12 @@ class MarkSeasonAsNotWatched(QDialog):
 		self.window_title = "Choose season of %s to mark as watched" % self.title
 		self.message_text = "Mark season %s as not watched"
 		self.sql_season_mark = ""
+		self.confirm_button_text = "Mark As Not Watched"
 		self.initUI()
 
 	def initUI(self):
-		self.setGeometry(400, 600, 600, 400)
+		self.resize(300, 200)
+		center(self)
 		self.setWindowTitle(self.window_title)
 		self.setModal(True)
 		
@@ -40,7 +43,8 @@ class MarkSeasonAsNotWatched(QDialog):
 		
 		# Confirmation buttonss		
 		self.cancel = QPushButton("Cancel")
-		self.confirm = QPushButton("Mark as Watched")	
+		self.confirm = QPushButton(self.confirm_button_text)	
+		self.confirm.setDisabled(True)
 		self.cancel.clicked.connect(self.reject)
 		self.confirm.clicked.connect(self.mark_season_as_watched)
 		
@@ -55,8 +59,10 @@ class MarkSeasonAsNotWatched(QDialog):
 		if season != "":
 			self.message.setText(self.message_text % season)
 			self.sql_season_mark = "UPDATE %s SET episode_watched = 0 WHERE season = %s" % (self.IMDB_id, season)
+			self.confirm.setDisabled(False)
 		else:
 			self.message.setText("You haven't selected a season")
+			self.confirm.setDisabled(True)
 	
 	def create_buttons(self):
 
@@ -100,12 +106,17 @@ class MarkSeasonAsWatched(MarkSeasonAsNotWatched):
 		self.window_title = "Choose season of %s to mark as watched" % self.title
 		self.message_text = "Mark season %s as watched"
 		self.sql_season_mark = ""
+		self.confirm_button_text = "Mark As Watched"
 		self.initUI()
 
 	def message_box_text(self, season):
 		if season != "":
 			self.message.setText(self.message_text % season)
 			self.sql_season_mark = "UPDATE %s SET episode_watched = 1 WHERE season = %s" % (self.IMDB_id, season)
+			self.confirm.setDisabled(False)
+		else:
+			self.message.setText("You haven't selected a season")
+			self.confirm.setDisabled(True)
 
 class MarkUpToEpisodeAsWatched(QDialog):
 	
@@ -121,7 +132,8 @@ class MarkUpToEpisodeAsWatched(QDialog):
 		self.initUI()
 		
 	def initUI(self):
-		self.setGeometry(400, 600, 800, 500)
+		self.resize(800, 500)
+		center(self)
 		self.setWindowTitle(self.window_title)
 		self.layout = QVBoxLayout()
 		
@@ -234,9 +246,11 @@ class MarkUpToEpisodeAsWatched(QDialog):
 			episode_seasonal_id = self.table_dict["self.episode_table_widget_{0}".format(season)].item(row, col).text()
 			self.mark_message.setText("Episodes up to and including %s will be marked as watched" % episode_seasonal_id)
 			self.sql_episode_mark = "UPDATE %s SET episode_watched = 1 WHERE episode_seasonal_id <= '%s' AND episode != ''" % (self.IMDB_id, episode_seasonal_id)
+			self.confirm.setDisabled(False)
 		except AttributeError:
 			self.mark_message.setText("You haven't selected an episode")
 			self.sql_episode_mark = ""
+			self.confirm.setDisabled(True)
 			
 
 	def create_confirmation_buttons(self):
@@ -245,13 +259,14 @@ class MarkUpToEpisodeAsWatched(QDialog):
 		self.confirmation_button_box.layout = QHBoxLayout()
 				
 		cancel = QPushButton("Cancel")
-		confirm = QPushButton("Mark as Watched")
+		self.confirm = QPushButton("Mark as Watched")
+		self.confirm.setDisabled(True)
 		
 		cancel.clicked.connect(self.reject) #This button rejects the action and closes window withour changing anything in database.
-		confirm.clicked.connect(self.mark_up_to_episode)
+		self.confirm.clicked.connect(self.mark_up_to_episode)
 		
 		self.confirmation_button_box.layout.addWidget(cancel)
-		self.confirmation_button_box.layout.addWidget(confirm)
+		self.confirmation_button_box.layout.addWidget(self.confirm)
 		
 		self.confirmation_button_box.setLayout(self.confirmation_button_box.layout)
 		
@@ -276,7 +291,8 @@ class OpenMarkAsNotWatched(QWidget):
 		self.setAttribute(Qt.WA_DeleteOnClose)
 		
 	def initUI(self):
-		self.setGeometry(settings.value("top"), settings.value("left"), settings.value("width"), settings.value("height"))
+		self.resize(settings.value("width"), settings.value("height"))
+		center(self)
 		self.setMinimumSize(settings.value("width"), settings.value("height"))
 		self.setWindowTitle("Mark %s episodes as not watched" % self.title)
 		self.setWindowModality(Qt.ApplicationModal) # This function disables other windows untill user closes Show Window
