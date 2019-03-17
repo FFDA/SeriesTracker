@@ -340,7 +340,9 @@ class CreateShowTables:
 		self.button_add_show_box = QGroupBox()
 		self.button_add_show_box.layout = QHBoxLayout()	
 		
+		# Creates Add Show button and it's layout.
 		button_add_show = QPushButton("Add Show")
+		button_add_show.setFocusPolicy(Qt.NoFocus)
 		button_add_show.clicked.connect(self.open_add_show)
 		self.button_add_show_box.layout.addWidget(button_add_show)		
 		self.button_add_show_box.setLayout(self.button_add_show_box.layout)
@@ -355,9 +357,13 @@ class CreateShowTables:
 
 		# Making buttons checkable to make them look differently, and to make them work exclusively
 		btn_all_shows.setCheckable(True)
+		btn_all_shows.setFocusPolicy(Qt.NoFocus)
 		btn_watchlist.setCheckable(True)
+		btn_watchlist.setFocusPolicy(Qt.NoFocus)
 		btn_finished_watching.setCheckable(True)
+		btn_finished_watching.setFocusPolicy(Qt.NoFocus)
 		btn_plan_to_watch.setCheckable(True)
+		btn_plan_to_watch.setFocusPolicy(Qt.NoFocus)
 
 		# Setting default button
 		btn_all_shows.setChecked(True)	
@@ -409,7 +415,8 @@ class CreateShowTables:
 		self.shows_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
 		self.shows_table.setColumnWidth(0, 200)
 		self.shows_table.setColumnWidth(2, 110)
-		self.shows_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+		self.shows_table.setSelectionBehavior(QAbstractItemView.SelectRows) # Selects full rows only
+		self.shows_table.setSelectionMode(QAbstractItemView.SingleSelection) # Selects only one line at time.
 		self.shows_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
 		self.shows_table.hideColumn(5) # Hides column that has IMDB_id in it.
 
