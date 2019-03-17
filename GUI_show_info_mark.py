@@ -8,7 +8,7 @@ from functools import partial
 # PyQt5 imports
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QDialog, QScrollArea, QComboBox, QGridLayout, QTableWidget, QTableWidgetItem
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
-from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
+from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, QSize
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 
 from GUI_episode_tracker import CreateShowEpisodesTableNotWatched
@@ -37,7 +37,6 @@ class MarkSeasonAsNotWatched(QDialog):
 		self.create_buttons()
 		self.message = QLabel("You haven't selected a season")
 		self.message.setAlignment(Qt.AlignCenter)
-		#self.create_confirmation_buttons()#
 		
 		# Confirmation buttonss		
 		self.cancel = QPushButton("Cancel")
@@ -60,9 +59,6 @@ class MarkSeasonAsNotWatched(QDialog):
 			self.message.setText("You haven't selected a season")
 	
 	def create_buttons(self):
-		
-		#self.button_box = QGroupBox()
-		#self.button_box.layout = QHBoxLayout()
 
 		# Season list that contains all season numbers in string form that will be used later on to populate drop down menu for user to choose a season from.
 		# First value has "All" that prints all show's seasons.
@@ -84,22 +80,7 @@ class MarkSeasonAsNotWatched(QDialog):
 		
 		self.season_button_label = QLabel("Season")
 		
-		#self.button_box.layout.addWidget(season_button_label)
-		#self.button_box.layout.addWidget(season_button)
-				
-		#self.button_box.setLayout(self.button_box.layout)
-		
-#	def create_confirmation_buttons(self):
-		
-		#self.confirmation_button_box = QGroupBox()
-		#self.confirmation_button_box.layout = QHBoxLayout()
 
-		
-		#self.confirmation_button_box.layout.addWidget(cancel)
-		#self.confirmation_button_box.layout.addWidget(confirm)
-		
-		#self.confirmation_button_box.setLayout(self.confirmation_button_box.layout)
-		
 	def mark_season_as_watched(self):
 		if self.sql_season_mark == "":
 			self.message.setText("Please select a season")
@@ -146,12 +127,14 @@ class MarkUpToEpisodeAsWatched(QDialog):
 		
 		self.message = QLabel(self.message_text)
 		self.message.setWordWrap(True)
+		self.message.setAlignment(Qt.AlignCenter)
 		
 		self.create_confirmation_buttons()
 		
 		self.create_episode_tables()
 		
 		self.mark_message = QLabel("You haven't selected an episode")
+		self.mark_message.setAlignment(Qt.AlignCenter)
 		
 		self.layout.addWidget(self.message)
 		self.layout.addWidget(self.scroll_area)
@@ -169,7 +152,6 @@ class MarkUpToEpisodeAsWatched(QDialog):
 		self.scroll_area.setWidgetResizable(True)
 		self.episode_tables = QWidget()
 		self.episode_tables.layout = QGridLayout()
-		#self.episode_tables.layout.setSizeConstraint(QLayout.SetMinAndMaxSize)
 		
 		# Integers that hold values to make a 3x3 grid from tables.
 		widget_row_count = 0
@@ -187,6 +169,7 @@ class MarkUpToEpisodeAsWatched(QDialog):
 			
 			current_table_widget.setColumnCount(3)
 			current_table_widget.setEditTriggers(QAbstractItemView.NoEditTriggers) # Makes widget not editable
+			current_table_widget.setSelectionMode(QAbstractItemView.SingleSelection) # Makes that it is possible to select only one cell at a time.
 			
 			selected_episodes = QSqlQuery("SELECT episode_seasonal_id FROM %s WHERE season = '%s'" % (self.IMDB_id, season))
 			
@@ -209,13 +192,9 @@ class MarkUpToEpisodeAsWatched(QDialog):
 
 			current_table_widget.verticalHeader().setVisible(False)
 			current_table_widget.horizontalHeader().setVisible(False)
-			#episode_table_widget.setFixedSize(200, 300)
 			current_table_widget.resizeColumnsToContents()
 			
 			current_table_widget.cellClicked.connect(partial(self.make_sql_query, season))
-			
-			self.table_box.layout.addWidget(current_table_widget)
-			self.table_box.setLayout(self.table_box.layout)
 			
 			# Resest widget_col_count every third column
 			if widget_col_count == 3:
@@ -224,6 +203,24 @@ class MarkUpToEpisodeAsWatched(QDialog):
 			
 			widget_col_count += 1
 			
+			# Following code I repurposed from StackOverlow.
+			# https://stackoverflow.com/questions/41542934/pyqt-qtablewidget-remove-scrollbar-to-show-full-table
+			
+			current_table_widget_width = 4 # Needed for horizontal header to have some room.
+			current_table_widget_height = 4 # Needed for vertical header to have some room.
+				
+			for i in range(current_table_widget.columnCount()): # For range of all columns
+				current_table_widget_width += current_table_widget.columnWidth(i) # adds current row's width to total count
+			for i in range(current_table_widget.rowCount()): # For range of all rows
+				current_table_widget_height += current_table_widget.rowHeight(i) # adds current row's height to total count
+			
+			# Sets min and max size of current table	
+			current_table_widget.setMaximumSize(QSize(current_table_widget_width, current_table_widget_height))
+			current_table_widget.setMinimumSize(QSize(current_table_widget_width, current_table_widget_height))
+			
+			self.table_box.layout.addWidget(current_table_widget)
+			self.table_box.setLayout(self.table_box.layout)
+						
 			self.episode_tables.layout.addWidget(self.table_box, widget_row_count, widget_col_count) # Adds table to episode_tables grid
 			
 		self.episode_tables.setLayout(self.episode_tables.layout)
@@ -257,7 +254,6 @@ class MarkUpToEpisodeAsWatched(QDialog):
 		self.confirmation_button_box.layout.addWidget(confirm)
 		
 		self.confirmation_button_box.setLayout(self.confirmation_button_box.layout)
-
 		
 	def mark_up_to_episode(self):
 		# Marks all episodes to as watched if query isn't empty.
@@ -282,7 +278,7 @@ class OpenMarkAsNotWatched(QWidget):
 	def initUI(self):
 		self.setGeometry(settings.value("top"), settings.value("left"), settings.value("width"), settings.value("height"))
 		self.setMinimumSize(settings.value("width"), settings.value("height"))
-		self.setWindowTitle(self.title)
+		self.setWindowTitle("Mark %s episodes as not watched" % self.title)
 		self.setWindowModality(Qt.ApplicationModal) # This function disables other windows untill user closes Show Window
 
 		self.layout = QVBoxLayout()

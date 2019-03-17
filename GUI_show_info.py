@@ -176,6 +176,7 @@ class OpenShowWindow(QWidget):
 
 		season_button = QComboBox()
 		season_button.setMinimumSize(95, 31)
+		season_button.setFocusPolicy(Qt.NoFocus)
 		season_button.insertItems(0, season_list) # Adding all the options from season_list to the drop down menu
 		season_button.currentTextChanged.connect(self.print_season) # Detects if user chooses different season and send value to print_season function
 		
@@ -183,6 +184,7 @@ class OpenShowWindow(QWidget):
 
 		# Button that opens show's IMDB page
 		open_webpage = QPushButton("Open IMDB page")
+		open_webpage.setFocusPolicy(Qt.NoFocus)
 		open_webpage.clicked.connect(self.open_imdb_page)
 		open_webpage.setMinimumSize(150, 31)
 				
@@ -207,12 +209,15 @@ class OpenShowWindow(QWidget):
 
 		# Other buttons to manage database.
 		mark_as_button = QPushButton("Mark ...")
+		mark_as_button.setFocusPolicy(Qt.NoFocus)
 		mark_as_button.setMinimumSize(150, 31)
 		mark_as_button.setMenu(mark_as_button_menu)
 		update_button = QPushButton("Update ...")
+		update_button.setFocusPolicy(Qt.NoFocus)
 		update_button.setMinimumSize(150, 31)
 		update_button.setMenu(update_button_menu)
 		manage_button = QPushButton("Manage")
+		manage_button.setFocusPolicy(Qt.NoFocus)
 		manage_button.setMenu(manage_button_menu)
 		manage_button.setMinimumSize(150, 31)
 
