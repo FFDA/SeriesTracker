@@ -1,9 +1,7 @@
 #! /usr/bin/python3
 
 from imdbpie import Imdb
-
-import IMDB_id_validation as validate
-from GUI_misc import center
+from misc import center
 import re
 
 from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QLabel, QProgressBar, QTextEdit, QGridLayout

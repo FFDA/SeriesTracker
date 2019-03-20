@@ -1,237 +1,333 @@
 #! /usr/bin/python3
 
-# This is a module in episode tracker program that will add new TV series to database.
+from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QComboBox, QTextEdit, QProgressBar, QPushButton, QLineEdit
+from PyQt5.QtCore import Qt
+from PyQt5.QtSql import QSqlQuery
 
-# Importing Python3 dependencies
-from bs4 import BeautifulSoup
-import urllib.request as urllib
-from imdbpie import Imdb # This is the dependency that is written by someone else and my program is based on it. It download information in JSON files from IMDB.
-import sqlite3
+from imdbpie import Imdb
 import re
-import sys
-import os
-import pathlib #  needed to get $HOME folder
-import configparser # Will be used to store path to the file of the database.
+from misc import center, check_if_input_contains_IMDB_id
+ 
+class AddShow(QDialog):
+	 
+	def __init__(self):
+		super(AddShow, self).__init__()
+		self.imdb = Imdb()
+		self.initUI()
+		
+	def initUI(self):
+		self.resize(800, 500)
+		center(self)
+		self.setModal(True)
+		self.setWindowTitle("Add Show")
+		self.layout = QGridLayout()
+		
+		self.message = QLabel("Paste show's IMDB id or full url from IMDB.com and click Add Show")
+		self.message.setAlignment(Qt.AlignCenter)
+		
+		self.IMDB_id_input = QLineEdit()
+		self.IMDB_id_input.setClearButtonEnabled(True)
+		self.IMDB_id_input.setPlaceholderText("Paste IMDB here")
+		self.IMDB_id_input.textChanged.connect(self.IMDB_id_input_management)
+		
+		self.combo_box_label = QLabel("Add to:")
+		self.combo_box_list = ["Watchlist", "Finished Watching", "Plan to Watch"]
+		self.combo_box = QComboBox()
+		self.combo_box.addItems(self.combo_box_list)
+		self.combo_box.setCurrentIndex(2) # Setting combo box index to make "Plan to Watch" as default option.
 
-# Importing other programs modules writen by me.
-import IMDB_id_validation as validate
-from template import Templates
+		self.info_box = QTextEdit()
+		self.info_box.setReadOnly(True)
+		
+		self.progress_bar = QProgressBar()
+		self.progress_bar.setMinimum(0)
+		self.progress_bar.setMaximum(1)
+		
+		self.button_cancel = QPushButton("Cancel")
+		self.button_cancel.clicked.connect(self.reject)
+		self.button_add_show = QPushButton("Add Show")
+		self.button_add_show.clicked.connect(self.initiate_add_show)
+		self.button_add_show.setDisabled(True)
+		self.button_ok = QPushButton("OK")
+		self.button_ok.clicked.connect(self.accept)
+		self.button_ok.setDisabled(True)
+		
+		self.layout.addWidget(self.message, 0, 0, 1, 4)
+		self.layout.addWidget(self.IMDB_id_input, 1, 0, 1, 4)
+		self.layout.addWidget(self.combo_box_label, 2, 1, 1, 1)
+		self.layout.addWidget(self.combo_box, 2, 2, 1, 1)
+		self.layout.addWidget(self.info_box, 3, 0, 4, 4)
+		self.layout.addWidget(self.progress_bar, 8, 0, 1, 4)
+		self.layout.addWidget(self.button_cancel, 9, 0, 1, 1)
+		self.layout.addWidget(self.button_add_show, 9, 2, 1, 1)
+		self.layout.addWidget(self.button_ok, 9, 3, 1, 1)
+		
+		self.setLayout(self.layout)
+		self.show()
+		
+	def IMDB_id_input_management(self, text):
+		# This function enables / disables "Add Show" button depending if there is any text in the IMDB_id_input field
+		
+		if text != "":
+			self.button_add_show.setDisabled(False)
+		else:
+			self.button_add_show.setDisabled(True)
+			
+	def initiate_add_show(self):
+		
+		self.combo_box.setDisabled(True)
+		self.button_cancel.setDisabled(True)
+		
+		# Validates if user added text contains IMDB_id.
+		# If it does it checks if that show is already in the database. If it is not proceed to add the show.
+		# If user adds text without IMDB_id it prints text in the info_box.
+		# Likewise if user tries to add show that already exists in the database message will be added to info_box to tell that.
+		
+		self.IMDB_id_input.setReadOnly(True) # Sets IMDB_id_input field to readOnly that user could add extra text. Just in case.
+		
+		user_input = self.IMDB_id_input.text()
+		checked_user_input = check_if_input_contains_IMDB_id(user_input) # Checks if input contains IMDB_id
+		
+		if checked_user_input != False: # USer input has IMDB_id in it
+			
+			self.info_box.append("Adding show with IMDB_id: " + checked_user_input)
+			sql_check_if_exists = QSqlQuery("SELECT EXISTS (SELECT * FROM shows WHERE IMDB_id = '%s')" % checked_user_input) # SqlQuery to check if show is in database.
+			sql_check_if_exists.first()
+			if sql_check_if_exists.value(0) == 0: # Starts adding the show
+				self.info_box.append("Starting to add the show")
+				self.add_show(checked_user_input)				
+			else:
+				self.info_box.append("Show already exists in database") # Prints a message that show is already in database
+		else:
+			self.info_box.append("Couldn't find IMDB_id")
+		
+		self.IMDB_id_input.clear()
+		self.IMDB_id_input.setReadOnly(False)
+		self.combo_box.setDisabled(False)
+		
+	def add_show(self, IMDB_id):
+		# This functiong creates show entry into shows table and adds the show.
+		
+		progress_bar_value = 0
+		
+		finished_airing = 2 # Default value for finsihed airing. It will be changed latter if it is detected that show finsihed airing.
+		unknown_season = 0 # Default value for unknown season. It will be changed to 1 later if show has one.
+		
+		show_info = self.imdb.get_title_auxiliary(IMDB_id) # Retrieving show's info from IMDB
+		
+		# Checks if user tries to add movie instead if the show. And cancels proccess if he/she is.
+		if show_info["titleType"] == "movie":
+			self.info_box.append("You provided IMDB ID of a movie.")
+			self.info_box.append("It will not be added to database.")
+			return
+		
+		title = show_info["title"]
+		image = show_info["image"]["url"]
+		
+		# Tries to get summary of the show. Only one show right now does not have a summary: tt1288814
+		try:
+			synopsis = show_info['plot']['outline']['text']
+		except KeyError:
+			synopsis = show_info['plot']['summaries'][0]['text']
+		except TypeError:
+			synopsis = "There is no summary available at this time"		
+		
+		season_list = [] # This will be used later on to add every season in to database
+		
+		# Goes throught every season and adds it as separate item in the list.
+		# Replaces None season with "Unknown" and toggles unknown_season marker to 1 if there is one.
+		for season in range(len(show_info['seasonsInfo'])):
+			if show_info['seasonsInfo'][season]['season'] == None:
+				season_list.append("Unknown")
+				unknown_season = 1
+			else:
+				season_list.append(show_info['seasonsInfo'][season]['season'])
+		
+		self.progress_bar.setMaximum(len(season_list) + 6) # Setting true maximum value of progress_bar.
+		progress_bar_value += 2
+		self.progress_bar.setValue(progress_bar_value)
+		
+		# Assingns seasons number depending on if there is "Unknown" season or not.
+		if unknown_season == 0:
+			seasons = len(season_list)
+		else:
+			seasons = len(season_list) - 1
+		
+		# Genres of the show
+		genres = " ".join(show_info["genres"])
+		
+		# Tries to get running time in minutes. If it fails it will asign 0
+		try:
+			running_time = show_info["runningTimeInMinutes"]
+		except KeyError:
+			running_time = 0
+	
+		# Tries to get years when show started and finish airing.
+		# If it can't get a second year it means, that show is still airing. It's not always the case, but it best I can do.
+		# If finished_aird last year matches the start year it means that show aired just for one year.
+		show_start_year = show_info["seriesStartYear"]
+		try:
+			show_end_year = show_info["seriesEndYear"]
+		except KeyError:
+			show_end_year = ""
+			finished_airing = 1	
+		
+		# Setting years airing that will be inserted into database.
+		if show_start_year == show_end_year:
+			years_aired = show_start_year		
+		else:
+			years_aired = str(show_start_year) + " - " + str(show_end_year)
+		
+		# finished_watching is user chosen list that he/she whanted show to be added to.
+		finished_watching = self.combo_box.currentIndex()
+		
+		progress_bar_value += 1
+		self.progress_bar.setValue(progress_bar_value)
+		
+		status_finished_airing = lambda status : "Airing" if status == 1 else "Finished Airing"
+		status_finished_watching = lambda status : "Watching" if status == 0 else ("Finished Watching" if status == 1 else "Plan to Watch")
+		status_unknown_season = lambda status : "Yes" if status == 1 else "No"
+		
+		# Printig collected data for user.
+		self.info_box.append("")
+		self.info_box.append("IMDB id: " + IMDB_id)
+		self.info_box.append("Title: " + title)
+		self.info_box.append("Image: " + image)
+		self.info_box.append("Synopsis: " + synopsis)
+		self.info_box.append("Seasons: " + str(seasons))
+		self.info_box.append("Genres: " + str(genres))
+		self.info_box.append("Running time: " + str(running_time))
+		self.info_box.append("Finished airing: " + status_finished_airing(finished_airing))
+		self.info_box.append("Years aired: " + str(years_aired))
+		self.info_box.append("List: " + status_finished_watching(finished_watching))
+		self.info_box.append("Unknown season: " + status_unknown_season(unknown_season))
+		
+		# Preparing SQL query to insert show into shows table
+		sql_insert_new_show_str = "INSERT INTO shows VALUES (:IMDB_id, :title, :image, :synopsis, :seasons, :genres, :running_time, :finished_airing, :years_aired, :finished_watching, :unknown_season)"
+		
+		#sql_insert_new_show_str2 = "INSERT INTO shows VALUES ('{}', '{}', '{}', '{}', {}, '{}', {}, {}, '{}', {}, {})".format(IMDB_id, title, image, synopsis, seasons, " ".join(genres), running_time, finished_airing,  years_aired, finished_watching, unknown_season)
+		#print(sql_insert_new_show_str2)
+		#self.info_box.append(sql_insert_new_show_str2)
+		
+		sql_insert_new_show = QSqlQuery()
+		sql_insert_new_show.prepare(sql_insert_new_show_str)
+	
+		progress_bar_value += 1
+		self.progress_bar.setValue(progress_bar_value)
+		
+		# Bindig values
+		sql_insert_new_show.bindValue(":IMDB_id", IMDB_id)
+		sql_insert_new_show.bindValue(":title", title)
+		sql_insert_new_show.bindValue(":image", image)
+		sql_insert_new_show.bindValue(":synopsis", synopsis)
+		sql_insert_new_show.bindValue(":seasons", seasons)
+		sql_insert_new_show.bindValue(":genres", genres)
+		sql_insert_new_show.bindValue(":running_time", running_time)
+		sql_insert_new_show.bindValue(":finished_airing", finished_airing)
+		sql_insert_new_show.bindValue(":years_aired", years_aired)
+		sql_insert_new_show.bindValue(":finished_watching", finished_watching)
+		sql_insert_new_show.bindValue(":unknown_season", unknown_season)
+	
+		#Inserting new row into shows table.
+		sql_insert_new_show.exec_()
+		
+		progress_bar_value += 1
+		self.progress_bar.setValue(progress_bar_value)
+		
+		# Creating SQL query to add show's episode table
+		sql_create_show_episode_table = QSqlQuery("CREATE TABLE IF NOT EXISTS %s (episode_watched INTEGER, season INTEGGER, episode INTEGER, episode_IMDB_id TEXT NOT NULL PRIMARY KEY, episode_seasonal_id TEXT, episode_year INTEGER, episode_title TEXT NOT NULL, air_date TEXT)" % IMDB_id)
+		sql_create_show_episode_table.exec_()
+		
+		# This value will be used to mark episodes as watched if user select to add show as finisehd watching.
+		if finished_watching == 1:
+			mark_episode = 1
+		else:
+			mark_episode = 0
+		
+		added_episode_count = 0
+		
+		progress_bar_value += 1
+		self.progress_bar.setValue(progress_bar_value)
+		
+		# This part will go thought all avialable seasons and add them one by one.
+		for season in season_list:
+			
+			self.info_box.append("Now adding season: {}".format(season))
+			
+			# If it has to add an unknown season function has to have it's number.
+			# That is all normal seasons + 1
+			if season == "Unknown":
+				season_in_IMDB = int(seasons + unknown_season)
+				season_in_database = ""
+			else:
+				season_in_IMDB = season
+				season_in_database = season
+				
+			# Pattern for IMDB_id
+			pattern_to_look_for = re.compile("tt\d+")
+			# This labda should return just IMDB_id from given link
+			get_IMDB_id_lambda = lambda x: pattern_to_look_for.search(x)[0]
+			
+			# Getting detailed episode JSON file from IMDB using IMDBpie
+			detailed_season_episodes = self.imdb.get_title_episodes_detailed(IMDB_id, season_in_IMDB)
 
-# Path to config file directory.
-config_dir = os.path.join(pathlib.Path.home(), ".config/SeriesTracker/")
+			# Looping though episode in JSON file, assinging variable name to data that will be updated or inserted in to database.
+			for episode in detailed_season_episodes['episodes']:
+				
+				fetched_episode_IMDB_id = get_IMDB_id_lambda(episode['id'])
 
-# Assingning names to the modules.
-template = Templates()
+				# Asigning values fetched from IMDB to the variables.
+				fetched_episode_number = episode["episodeNumber"]
+				fetched_episode_year = episode["year"]
+				fetched_episode_title = episode["title"]
+				fetched_episode_air_date = episode["releaseDate"]["first"]["date"]
+				
+				
+				
+				if fetched_episode_number == None:
+					fetched_episode_number = ""		
+				if fetched_episode_year == None:
+					fetched_episode_year = ""
+				if fetched_episode_title == None:
+					fetched_episode_title = ""
+				if fetched_episode_air_date == None:
+					fetched_episode_air_date = ""
 
-# Setting up config parser
-config = configparser.ConfigParser()
-
-# Opening config file.
-config.read(config_dir + "config.ini")
-config.sections()
-
-# Connecting to the database
-con = sqlite3.connect(config["DATABASE"]["Path"])
-cur = con.cursor()
-
-# Creating the database "shows" if it doesn't exist.
-cur.execute('''CREATE TABLE IF NOT EXISTS shows
-    (IMDB_id TEXT NOT NULL PRIMARY KEY, title TEXT NOT NULL, image TEXT NOT NULL, synopsis TEXT NOT NULL, seasons INTEGER NOT NULL, genres TEXT NOT NULL, running_time INTEGER NOT NULL, finished_airing INTEGER NOT NULL, years_aired TEXT NOT NULL, finished_watching INTEGER NOT NULL, unknown_season INTEGER NOT NULL)''')
-
-# Setting variable name for the imdbpie.
-imdb = Imdb()
-
-
-class AddShow:
-
-    def __init__(self):
-        self.IMDB_id = ""
-        # Pattern for IMDB_id
-        self.pattern_to_look_for = re.compile("tt\d+")
-        self.finished_watching = ""
-        self.show_seasons = ""
-        self.unknown_season = 0 # This is a default value that shows, that unknown_season does not exist. It will be change later on when unknown season is added later.
-
-        # This labda should return just IMDB_id from given link
-        self.get_IMDB_id_lambda = lambda x: self.pattern_to_look_for.search(x)[0]
-    
-    # Code to process one link or id.
-    def validate_IMDB_id(self, IMDB_id_str):
-        if validate.check_if_input_contains_IMDB_id(IMDB_id_str):
-            self.IMDB_id = self.pattern_to_look_for.search(IMDB_id_str)[0]
-            # Checks if IMDB_id actually represents a IMDB page.
-            if imdb.title_exists(self.IMDB_id):
-                self.title_exists_in_database()
-            else:
-                print(template.information.format("This show does not exist in IMDB!"))
-        else:
-            print(template.information.format("This is not valid IMDB id!"))
-
-    # Checking if show already exist in the database
-    def title_exists_in_database(self):
-        if validate.title_exists_in_database(self.IMDB_id):
-            print(template.information.format("This show - " + self.IMDB_id + " - is already in your library"))
-        # Adding show that doesn't exists in the database.
-        else:
-            print(template.information.format("Will be adding the show"))
-            self.add_show()
-
-    def add_show(self):
-        # Getting title of the show using imdbpie.
-        title = imdb.get_title_auxiliary(self.IMDB_id)
-        # Getting a list of seasons to iterate throught
-        self.show_seasons = imdb.get_title_episodes_detailed(self.IMDB_id, 1)['allSeasons']
-        # Following part is needed because some shows have 'Unknowsn'/None season. This season should not show up in full season list, but should still be printed out, when printing the all episodes.
-        full_seasons = self.show_seasons.copy()
-        if None in full_seasons:
-            full_seasons.remove(None)
-
-
-        # Sometime Show has a None season. This if function will make a variable that will containt a list of seasons without it.
-        title_type = title['titleType']
-
-        if title_type == 'movie':
-            print(template.information.format("You privded link to the movie, not a series"))
-            sys.exit()
-        print(template.information.format("Adding show - %s - to the database" % self.IMDB_id))
-        # Downloadning HTML page of the website.
-        html_page = urllib.urlopen("https://www.imdb.com/title/" + self.IMDB_id +"/")
-        # Parsing downloaded HTML file to get title of the page.
-        soup_title = BeautifulSoup(html_page, 'html.parser').title.contents[0]
-        # Parsing years aired of the show.
-        years_aired = re.findall("\d{4}", soup_title)
-    
-        # Getting title of the show.
-        show_title = title['title']
-        # Getting link to the image of the show.
-        try:
-            show_image = title["image"]["url"]
-        except KeyError:
-            show_image = ""
-        # Getting summary of the show.
-        try:
-            show_summary = title['plot']['outline']['text']
-        except KeyError:
-            show_summary = title['plot']['summaries'][0]['text']
-        except TypeError:
-            show_summary = "There is no summary available at this time"
-        # Getting length of the episode.
-        try:
-            show_running_time = title['runningTimeInMinutes']
-        except KeyError:
-            show_running_time = 0
-        # Getting show's genres
-        show_genres = title['genres']
-
-        # assigning variable finished watching to default value 0 (no). User will be asked if he finished watchin the show just if show finished airing.
-
-        # Printing title of the chosen IMDB_id
-        print(show_title)
-        print()
-        # Printing number of seasons
-        print("Number of seasons: " + str(len(self.show_seasons)))
-        print()
-        # Printing link to image
-        print("Link to the image: " + show_image)
-        print()
-        # Printing summary 
-        print("Outline: " + show_summary)
-        print()
-        if len(years_aired) == 2:
-            print("Finised airing (" + years_aired[0] + " - " + years_aired[1] + ")")
-            show_years_aired = years_aired[0] + " - " + years_aired[1]
-#             if len(self.finished_watching) == 0: 
-#                 self.ask_if_finished_watching()
-        else:
-            print ("Still Airing")
-            show_years_aired = years_aired[0] + " - "
-#             if len(self.finished_watching) == 0: 
-#                 self.ask_if_currently_watching()
-        print()
-        
-        print("Inserting data in to database")
-        
-        con.execute("INSERT INTO shows VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (self.IMDB_id, show_title, show_image, show_summary, len(full_seasons), " ".join(show_genres), show_running_time, len(years_aired), show_years_aired, self.finished_watching, self.unknown_season))
-        con.commit()
-        self.add_show_episodes()
-    
-    def add_show_episodes(self):
-        cur.execute("CREATE TABLE IF NOT EXISTS %s (episode_watched INTEGER, season INTEGGER, episode INTEGER, episode_IMDB_id TEXT NOT NULL PRIMARY KEY, episode_seasonal_id TEXT, episode_year INTEGER, episode_title TEXT NOT NULL, air_date TEXT)" % self.IMDB_id
-        )
-        # Creating table for the show episodes if it doesn't exist.
-        print("Episode data will be downloaded and added to the database")
-        for season in self.show_seasons:
-            
-            if season == None:
-                # This has a lot of errors and most likely holds episodes for upcoming seasons
-                print(template.information.format("Adding season 'Unknown' to the database"))
-
-                # Marks show that it has a "Unknown" season in shows table.
-                cur.execute("UPDATE shows SET unknown_season = 1 WHERE IMDB_id='%'" % self.IMDB_id)
-
-                current_season = imdb.get_title_episodes_detailed(self.IMDB_id, len(self.show_seasons))
-                for episodes in current_season['episodes']:
-                    # Had to add this if statement, because I added new state for the series, that other functions do not recognized this status of the episode.
-                    if self.finished_watching == 2:
-                        finished_watching = 0
-                    else:
-                        finished_watching = self.finished_watching
-
-                    print("++++++~~~~~~++++++")
-                    current_ep_season = ''
-                    print("Episode's season " + current_ep_season)
-                    current_ep_number = episodes['episodeNumber']
-                    print("Episode's number: " + str(current_ep_number))
-                    current_ep_IMDB_id = self.get_IMDB_id_lambda(episodes['id'])
-                    print("Episode's IMDB_id: "+ current_ep_IMDB_id)
-                    current_ep_seasonal_id = ''
-                    print("Episode's seasonal ID: " + current_ep_seasonal_id)
-                    current_ep_year = episodes['year']
-                    print("Episode's air year : " + str(current_ep_year))
-                    current_ep_title = episodes['title']
-                    print("Episode's title: " + current_ep_title)
-                    current_ep_air_date = ""
-                    print("Episode's air date: " + current_ep_air_date)
-                    current_ep_insert_string = "INSERT INTO %s VALUES (?, ?, ?, ?, ?, ?, ?, ?)" % self.IMDB_id
-                    con.execute(current_ep_insert_string, (finished_watching, current_ep_season, current_ep_number, current_ep_IMDB_id, current_ep_seasonal_id, current_ep_year, current_ep_title, current_ep_air_date))
-                    con.commit()
-
-
-            else:
-                print(template.information.format("Adding season " + str(season) + " episodes."))
-                current_season = imdb.get_title_episodes_detailed(self.IMDB_id, season)
-                for episodes in current_season['episodes']:   
-
-                    # Had to add this if statement, because I added new state for the series, that other functions do not recognized this status of the episode.
-                    if self.finished_watching == 2:
-                        finished_watching = 0
-                    else:
-                        finished_watching = self.finished_watching
-
-                    print("++++++~~~~~~++++++")
-                    current_ep_season = season
-                    print("Episode's season: " + str(current_ep_season))
-                    current_ep_number = episodes['episodeNumber']
-                    print("Episode's number: " + str(current_ep_number))
-                    current_ep_IMDB_id = self.get_IMDB_id_lambda(episodes['id'])
-                    print("Episode's IMDB_id: "+ current_ep_IMDB_id)
-                    if current_ep_season <= 9:
-                        current_ep_seasonal_id_season = "S0" + str(current_ep_season)
-                    else:
-                        current_ep_seasonal_id_season = "S" + str(current_ep_season)
-                    if current_ep_number <= 9:
-                        current_ep_seasonal_id_ep_number = "E0" + str(current_ep_number)
-                    else:
-                        
-                        current_ep_seasonal_id_ep_number = "E" + str(current_ep_number)
-                    current_ep_seasonal_id = current_ep_seasonal_id_season + current_ep_seasonal_id_ep_number
-                    print("Episode's seasonal ID: " + current_ep_seasonal_id)
-                    current_ep_year = episodes['year']
-                    print("Episode's air year : " + str(current_ep_year))
-                    current_ep_title = episodes['title']
-                    print("Episode's title: "+ current_ep_title)
-                    current_ep_air_date = episodes['releaseDate']['first']['date']
-                    print("Episode's air date: " + str(current_ep_air_date))
-                    current_ep_insert_string = "INSERT INTO %s VALUES (?, ?, ?, ?, ?, ?, ?, ?)" % self.IMDB_id
-                    con.execute(current_ep_insert_string, (finished_watching, current_ep_season, current_ep_number, current_ep_IMDB_id, current_ep_seasonal_id, current_ep_year, current_ep_title, current_ep_air_date))
-                    con.commit()
+				if fetched_episode_number != "" and season_in_database != "":
+					if season <= 9:
+						new_episode_seasonal_id_season = "S0" + str(season_in_IMDB)
+					else:
+						new_episode_seasonal_id_season = "S" + str(season_in_IMDB)
+					if fetched_episode_number <= 9:
+						new_episode_seasonal_id_number = "E0" + str(fetched_episode_number)
+					else:
+						new_episode_seasonal_id_number = "E" + str(fetched_episode_number)
+						
+					fetched_episode_seasonal_id = new_episode_seasonal_id_season + new_episode_seasonal_id_number
+				else:
+					fetched_episode_seasonal_id = ""
+					
+				
+				# This sting uses two types of substitution. One is Python3 and the other one is provided py Qt5.
+				insert_episode_string = "INSERT INTO {IMDB_id} VALUES (:episode_watched, :episode_season, :episode_number, :episode_IMDB_id, :episode_seasonal_id, :episode_year, :episode_title, :air_date)".format(IMDB_id = IMDB_id)
+				
+				sql_insert_episode = QSqlQuery()
+				sql_insert_episode.prepare(insert_episode_string)
+				sql_insert_episode.bindValue(":episode_watched", mark_episode)
+				sql_insert_episode.bindValue(":episode_season", season_in_database) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode season will make sql_query to fail.
+				sql_insert_episode.bindValue(":episode_number", fetched_episode_number) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode numbers will make sql_query to fail.
+				sql_insert_episode.bindValue(":episode_IMDB_id", fetched_episode_IMDB_id) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode_IMDB_id will make sql_query to fail.
+				sql_insert_episode.bindValue(":episode_seasonal_id", fetched_episode_seasonal_id) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode_seasonal_id will make sql_query to fail.
+				sql_insert_episode.bindValue(":episode_year", fetched_episode_year) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode year will make sql_query to fail.
+				sql_insert_episode.bindValue(":episode_title", fetched_episode_title) # This substitutions is provided by Qt5 and is needed, becauase otherwise titles with quotes fill fail to be inserted into database.
+				sql_insert_episode.bindValue(":air_date", fetched_episode_air_date) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty air_date will make sql_query to fail.					
+				sql_insert_episode.exec_()
+				
+				added_episode_count += 1						
+				progress_bar_value += 1
+				self.progress_bar.setValue(progress_bar_value)
+		
+		self.info_box.append("Finished adding show.")
+		self.info_box.append("Total episodes: {}".format(added_episode_count))
+		
+		self.button_ok.setDisabled(False)

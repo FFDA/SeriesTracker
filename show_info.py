@@ -10,11 +10,11 @@ from PyQt5.QtWidgets import QDialog, QMainWindow, QApplication, QVBoxLayout, QTa
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QFont
 from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
 
-from GUI_episode_tracker import CreateShowEpisodesTable
-from GUI_show_info_mark import *
-from GUI_show_info_update import *
-from GUI_show_info_manage import *
-from GUI_misc import center
+from series_tracker import CreateShowEpisodesTable
+from show_info_mark import *
+from show_info_update import *
+from show_info_manage import *
+from misc import center
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
 

@@ -12,10 +12,10 @@ from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QDialog
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
 
-from GUI_show_info import *
-from GUI_database import *
-from GUI_add_show import *
-from GUI_misc import center
+from show_info import *
+from database import *
+from add_show import *
+from misc import center
 
 # PyQt5 settings
 settings = QSettings("SeriesTracker", "SeriesTracker")

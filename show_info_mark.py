@@ -11,8 +11,8 @@ from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
 from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, QSize
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 
-from GUI_episode_tracker import CreateShowEpisodesTableNotWatched
-from GUI_misc import center
+from series_tracker import CreateShowEpisodesTableNotWatched
+from misc import center
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
 

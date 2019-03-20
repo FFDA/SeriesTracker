@@ -1,8 +1,7 @@
 #! /usr/bin/python3
 
 from imdbpie import Imdb
-import IMDB_id_validation as validate
-from GUI_misc import center
+from misc import center
 
 from PyQt5.QtWidgets import QDialog, QPushButton, QProgressBar, QComboBox, QLabel, QProgressBar, QGridLayout, QTextEdit
 from PyQt5.QtSql import QSqlQuery
@@ -132,7 +131,7 @@ class FixSeason(QDialog):
 		list_of_season_fix_imdb = []
 
 		for episode in season_fix_imdb["episodes"]:
-			list_of_season_fix_imdb.append(validate.check_if_input_contains_IMDB_id(episode["id"]))
+			list_of_season_fix_imdb.append(check_if_input_contains_IMDB_id(episode["id"]))
 			
 		self.progress_bar.setMaximum(len(list_of_season_fix_imdb))
 		
