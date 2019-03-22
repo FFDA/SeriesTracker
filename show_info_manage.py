@@ -1,7 +1,7 @@
 #! /usr/bin/python3
 
 from imdbpie import Imdb
-from misc import center
+from misc import center, check_if_input_contains_IMDB_id
 
 from PyQt5.QtWidgets import QDialog, QPushButton, QProgressBar, QComboBox, QLabel, QProgressBar, QGridLayout, QTextEdit
 from PyQt5.QtSql import QSqlQuery
@@ -144,8 +144,8 @@ class FixSeason(QDialog):
 				list_of_season_fix_imdb.index(season_fix_db.value("episode_IMDB_id"))
 				pass
 			except ValueError:
-				sql_delete_episode = QSqlQuery("DELETE FROM %s WHERE episode_IMDB_id='%s'" % (current_IMDB_id, season_fix_db.value("episode_IMDB_id")))
-				sql_delete_epsidoe.exec_()
+				sql_delete_episode = QSqlQuery("DELETE FROM %s WHERE episode_IMDB_id='%s'" % (self.IMDB_id, season_fix_db.value("episode_IMDB_id")))
+				sql_delete_episode.exec_()
 				self.info_box.append("Removed episode with IMDB ID: {episode_IMDB_id}, seasonal ID: {episode_seasonal_id} and title: {episode_title}".format(episode_IMDB_id = season_fix_db.value("episode_IMDB_id"), episode_seasonal_id = season_fix_db.value("episode_seasonal_id"), episode_title = season_fix_db.value("episode_title")))
 				something_was_removed_check = 1 # Initiating a toggle that will not print a message that nothing was deleted.
 			
