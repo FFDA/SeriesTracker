@@ -308,7 +308,7 @@ class UpdateThreeSeasons(UpdateSingleSeason):
 		self.initUI()
 
 	def initUI(self):
-		self.resize(400, 600, 800, 500)
+		self.resize(800, 500)
 		self.setModal(True)
 		self.setWindowTitle(self.window_title)
 		self.layout = QGridLayout()
