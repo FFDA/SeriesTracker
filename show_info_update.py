@@ -509,7 +509,7 @@ class UpdateShowInfo(QDialog):
 			# It also updates air dates in the database.
 			sql_update_years_and_finished = QSqlQuery("UPDATE shows SET finished_airing = {finished_airing}, years_aired = '{years_aired}' WHERE IMDB_id = '{show_id}'".format(finished_airing = fetched_finished_airing, years_aired = fetched_years_aired, show_id = IMDB_id))
 			sql_update_years_and_finished.exec_()
-			self.info_box.append("Updated years aired from {old_years_aired} to {new_years_aired} and change show's airing status".format(old_years_aired = current_years_aired, new_years_aired = fetched_years_aired))
+			self.info_box.append("Updated years aired from {old_years_aired} to {new_years_aired} and changed show's airing status".format(old_years_aired = current_years_aired, new_years_aired = fetched_years_aired))
 			something_updated_trigger = 1
 		
 		if current_seasons != fetched_seasons:

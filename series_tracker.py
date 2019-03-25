@@ -420,7 +420,8 @@ class CreateShowTables:
 		self.shows_table.setSelectionMode(QAbstractItemView.SingleSelection) # Selects only one line at time.
 		self.shows_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
 		self.shows_table.hideColumn(5) # Hides column that has IMDB_id in it.
-		self.shows_table.setSortingEnabled(True) # Enables sorting by column when clicking on them
+		self.shows_table.setSortingEnabled(True) # Enables sorting by column when clicking on them.
+		self.shows_table.sortByColumn(0, Qt.AscendingOrder)
 
 
 	def fill_table(self):
