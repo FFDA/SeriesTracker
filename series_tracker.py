@@ -85,7 +85,7 @@ class TabWidget(QWidget):
 		self.next_episodes = CreateUpcomingEpisodesTable()
 		self.next_episodes.label_text = "Upcoming Episodes"
 		self.next_episodes.sql_select_shows = "SELECT * FROM shows WHERE finished_watching = 0"
-		self.next_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE LENGTH(air_date) > 4 AND air_date >= '%s' ORDER BY air_date ASC"
+		self.next_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE air_date >= '%s' ORDER BY episode_seasonal_id ASC"
 		self.next_episodes.create_label()
 		self.next_episodes.create_table()
 		self.next_episodes.fill_episode_table()
@@ -270,7 +270,7 @@ class CreateUpcomingEpisodesTable(CreateEpisodesTable):
 				self.insert_table_row(row_count, episode, selected.value("IMDB_id"), selected.value("title"))
 				row_count += 1
 			else:
-				episode = QSqlQuery("select * from %s where episode_watched = 0 and (air_date is null or length(air_date) < 8)" % selected.value("IMDB_id"))
+				episode = QSqlQuery("SELECT * FROM %s WHERE episode_watched = 0 AND (air_date IS null OR length(air_date) <= 8)" % selected.value("IMDB_id"))
 				if episode.first() == True:
 					self.insert_table_row(row_count, episode, selected.value("IMDB_id"), selected.value("title"))
 					row_count += 1
