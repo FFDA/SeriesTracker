@@ -12,15 +12,13 @@ from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QDialog
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
 
-from show_info import *
 from database import *
+from misc import *
+from show_info import *
 from add_show import *
-from misc import center
 
 # PyQt5 settings
 settings = QSettings("SeriesTracker", "SeriesTracker")
-settings.setValue("top", 200)
-settings.setValue("left", 400)
 settings.setValue("width", 1200)
 settings.setValue("height", 800)
 
@@ -28,15 +26,16 @@ class mainWindow(QMainWindow):
 
 	def __init__(self):
 		super().__init__()
-		self.initUI()
+		self.initUI()	
 
 	def initUI(self):
-		#self.setGeometry(settings.value("top"), settings.value("left"), settings.value("width"), settings.value("height"))
+		db = DatabaseConnection
+		db.check(self)
+		db.connect()
 		self.resize(settings.value("width"), settings.value("height"))	
 		center(self)
 		self.setWindowTitle("Series Episode Tracker")
 		self.tab_widget = TabWidget(self)
-		#self.tab_widget.setStyle("fusion")
 		self.setCentralWidget(self.tab_widget)
 		self.show()
 
@@ -618,6 +617,6 @@ class CreateShowEpisodesTableNotWatched(CreateShowEpisodesTable):
 
 
 if __name__ == "__main__":
-	app = QApplication(sys.argv)
+	app = QApplication(sys.argv)	
 	mainWindow = mainWindow()
 	sys.exit(app.exec_())
