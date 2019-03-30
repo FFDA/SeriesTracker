@@ -36,6 +36,7 @@ class mainWindow(QMainWindow):
 		center(self)
 		self.setWindowTitle("Series Episode Tracker")
 		self.tab_widget = TabWidget(self)
+		#self.tab_widget.setStyle("fusion")
 		self.setCentralWidget(self.tab_widget)
 		self.show()
 
@@ -411,6 +412,7 @@ class CreateShowTables:
 
 		# TableView model that actually displays show table
 		self.shows_table = QTableView()
+		self.shows_table.setWordWrap(False) # Had to add this, because PyQt5 from pip has different default parameters from feroda's repository's PyQt5.
 		self.shows_table.setModel(self.filter_model)
 		self.shows_table.verticalHeader().setVisible(False)
 		self.shows_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
