@@ -9,7 +9,7 @@ from functools import partial
 # Importing PyQt5 stuff
 from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
 from PyQt5.QtSql import QSqlQuery
-from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QDialog
+from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QDialog, QShortcut
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
 
 from database import *
@@ -118,15 +118,22 @@ class TabWidget(QWidget):
 		self.tab2.layout.addWidget(self.shows_table.shows_table, 2, 0, 10, 6)
 		self.tab2.setLayout(self.tab2.layout)
 		
+		focus_search = QShortcut("CTRL+F", self)
+		focus_search.activated.connect(self.set_focus_on_search)
+		
 				
 	def tab_changed(self, index):
-		
+		# Checks to which tab user changed to. Set focus on search field in "Shows" tab.
 		if index == 0:
 			self.latest_episodes.refill_episode_table()
 			self.next_episodes.refill_episode_table()
 		else:
 			self.shows_table.refill_table(self.shows_table.sql_query)
-			self.shows_table.filter_box.setFocus() # Auto focuses on Filter box every time user clicks on Shows tab.
+			self.set_focus_on_search()
+			
+	def set_focus_on_search(self):
+		# Sets focus on search field in "Shows" tab
+		self.shows_table.filter_box.setFocus() # Auto focuses on Filter box every time user clicks on Shows tab.
 		
 
 class CreateEpisodesTable:

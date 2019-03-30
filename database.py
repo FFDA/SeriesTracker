@@ -13,7 +13,6 @@ class DatabaseConnection():
 		if settings.value("DB_path") == None:
 			db_path = QFileDialog().getExistingDirectory(self, "Select database location")
 			f_db_path = db_path + "/shows.db"
-			print(f_db_path)
 			settings.setValue("DB_path", f_db_path)
 	
 	def connect():
