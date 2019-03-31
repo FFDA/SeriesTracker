@@ -8,7 +8,7 @@ import webbrowser
 # PyQt5 imports
 from PyQt5.QtWidgets import QDialog, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QComboBox, QMenu, QDesktopWidget
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QFont
-from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, pyqtSignal, pyqtSlot, QObject
+from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, pyqtSignal, QObject
 
 from series_tracker import CreateShowEpisodesTable
 from show_info_mark import *
@@ -340,8 +340,7 @@ class ShowInfoEpisodesTable(CreateShowEpisodesTable, QObject):
 		self.IMDB_id = IMDB_id
 		self.sql_select_shows = ""
 		self.table_column_count = 5
-		self.horizontal_header_labels = ["", "Episode ID", "Air Date", "Episode Title", ""]
-		
+		self.horizontal_header_labels = ["", "Episode ID", "Air Date", "Episode Title", ""]		
 
 	# Marks episode as watched and repopulates table with updated data.
 	def mark_watched(self, IMDB_id, episode_IMDB_id):
