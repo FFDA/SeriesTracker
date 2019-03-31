@@ -8,7 +8,7 @@ import webbrowser
 # PyQt5 imports
 from PyQt5.QtWidgets import QDialog, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QComboBox, QMenu, QDesktopWidget
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QFont
-from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
+from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, pyqtSignal, pyqtSlot, QObject
 
 from series_tracker import CreateShowEpisodesTable
 from show_info_mark import *
@@ -39,6 +39,7 @@ class OpenShowWindow(QWidget):
 		self.make_show_info_box()
 		
 		self.episodes_table = ShowInfoEpisodesTable(self.IMDB_id) # Initiating episode table
+		
 
 		self.episodes_table.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
 		self.episodes_table.create_table()	
@@ -57,6 +58,7 @@ class OpenShowWindow(QWidget):
 		self.show()
 		
 		self.episodes_table.episode_table.scrollToBottom() # Scrolls table to the bottom
+		self.episodes_table.episode_marked.connect(self.refill_show_info)
 	
 	def fetch_show_info(self):
 		# Fetching data about show and seving them as variables to send to other functions/classes later.
@@ -249,48 +251,48 @@ class OpenShowWindow(QWidget):
 		else:
 			self.episodes_table.sql_select_shows = "SELECT * FROM %s WHERE season = '%s'" % (self.IMDB_id, season)
 
-		self.refill_episode_table()
+		self.episodes_table.refill_episode_table()
 
 	def open_fix_season(self):
 		self.open_fix_season_window = FixSeason(self.IMDB_id, self.seasons, self.unknown_season, self.title)
 		result = self.open_fix_season_window.exec_()
 		
 		if result == QDialog.Accepted:
-			self.refill_episode_table()
+			self.episodes_table.refill_episode_table()
 	
 	def open_mark_episode_as_not_watched(self):
 		# This function detects if window was closed and refill episode table.
 		self.open_mark_episode_as_not_watched_window = OpenMarkAsNotWatched(self.IMDB_id, self.title, self.seasons, self.unknown_season)
 		self.open_mark_episode_as_not_watched_window.initUI()
-		self.open_mark_episode_as_not_watched_window.destroyed.connect(self.refill_episode_table)
+		self.open_mark_episode_as_not_watched_window.destroyed.connect(self.refill_show_info)
 		
 	def open_mark_season_as_not_watched(self):
 		self.open_mark_season_as_not_watched_window = MarkSeasonAsNotWatched(self.IMDB_id, self.seasons, self.unknown_season, self.title)
 		result = self.open_mark_season_as_not_watched_window.exec_()
 		
 		if result == QDialog.Accepted:
-			self.refill_episode_table()
+			self.refill_show_info()
 		
 	def open_mark_season_as_watched(self):
 		self.open_mark_season_as_watched_window = MarkSeasonAsWatched(self.IMDB_id, self.seasons, self.unknown_season, self.title)
 		result = self.open_mark_season_as_watched_window.exec_()
 		
 		if result == QDialog.Accepted:
-			self.refill_episode_table()
+			self.refill_show_info()
 	
 	def open_mark_up_to_episode_as_watched(self):
 		self.open_mark_up_to_episode_as_watched_window = MarkUpToEpisodeAsWatched(self.IMDB_id, self.title, self.seasons, self.unknown_season)
 		result = self.open_mark_up_to_episode_as_watched_window.exec_()
 		
 		if result == QDialog.Accepted:
-			self.refill_episode_table()
+			self.refill_show_info()
 			
 	def open_update_single_season(self):
 		self.open_update_single_season_window = UpdateSingleSeason(self.IMDB_id, self.seasons, self.unknown_season, self.title)
 		result = self.open_update_single_season_window.exec_()
 		
 		if result == QDialog.Accepted:
-			self.refill_episode_table()
+			self.episodes_table.refill_episode_table()
 	
 	def open_update_last_3_seasons(self):
 		self.open_update_single_season_window = UpdateThreeSeasons(self.IMDB_id, self.seasons, self.unknown_season, self.title)
@@ -323,17 +325,34 @@ class OpenShowWindow(QWidget):
 		
 		if result == QDialog.Accepted:
 			self.close() # SHOULD close the window
+			
+	def refill_show_info(self):
+		self.fetch_show_info()
+		self.fill_show_info_box()
+		self.episodes_table.refill_episode_table()
 	
-	def refill_episode_table(self):
-
-		self.episodes_table.table_model.setRowCount(0)
-		self.episodes_table.fill_episode_table()
-		self.episodes_table.episode_table.scrollToBottom() # Scrolls table to the bottom
-
-class ShowInfoEpisodesTable(CreateShowEpisodesTable):
+class ShowInfoEpisodesTable(CreateShowEpisodesTable, QObject):
 	
-	def refill_episode_table(self):
+	episode_marked = pyqtSignal() # This is a signal that will be emited after episode is marked as watched.
+	
+	def __init__(self, IMDB_id):
+		QObject.__init__(self) # I don't know whats the difference compared to super. I coppied that from pythoncentral.io
+		self.IMDB_id = IMDB_id
+		self.sql_select_shows = ""
+		self.table_column_count = 5
+		self.horizontal_header_labels = ["", "Episode ID", "Air Date", "Episode Title", ""]
+		
 
+	# Marks episode as watched and repopulates table with updated data.
+	def mark_watched(self, IMDB_id, episode_IMDB_id):
+		mark_episode = QSqlQuery("UPDATE %s SET episode_watched = 1 WHERE episode_IMDB_id = '%s'" % (IMDB_id, episode_IMDB_id))
+		mark_episode.exec_()
+		self.refill_episode_table()
+		self.episode_marked.emit() # Emiting signal
+
+	def refill_episode_table(self):
 		self.table_model.setRowCount(0)
 		self.fill_episode_table()
 		self.episode_table.scrollToBottom()
+		
+		
