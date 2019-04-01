@@ -76,7 +76,7 @@ class TabWidget(QWidget):
 		self.latest_episodes = CreateEpisodesTable()
 		self.latest_episodes.label_text = "Latest Episodes"
 		self.latest_episodes.sql_select_shows = "SELECT * FROM shows WHERE finished_watching = 0"
-		self.latest_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE LENGTH(air_date) > 4 AND air_date < '%s' ORDER BY air_date ASC"
+		self.latest_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE LENGTH(air_date) > 7 AND air_date < '%s' ORDER BY air_date ASC"
 		self.latest_episodes.create_label()
 		self.latest_episodes.create_table()
 		self.latest_episodes.fill_episode_table()
