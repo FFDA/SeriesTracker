@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QDialog, QMainWindow, QApplication, QVBoxLayout, QTa
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QFont
 from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, pyqtSignal, QObject
 
-from series_tracker import CreateShowEpisodesTable
+from series_tracker import CreateShowEpisodeTable
 from show_info_mark import *
 from show_info_update import *
 from show_info_manage import *
@@ -38,7 +38,7 @@ class OpenShowWindow(QWidget):
 		
 		self.make_show_info_box()
 		
-		self.episodes_table = ShowInfoEpisodesTable(self.IMDB_id) # Initiating episode table
+		self.episodes_table = CreateShowInfoEpisodeTable(self.IMDB_id) # Initiating episode table
 		
 
 		self.episodes_table.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
@@ -330,28 +330,87 @@ class OpenShowWindow(QWidget):
 		self.fetch_show_info()
 		self.fill_show_info_box()
 		self.episodes_table.refill_episode_table()
-	
-class ShowInfoEpisodesTable(CreateShowEpisodesTable, QObject):
+
+		
+class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
+	# This class used to display episodes in ShowInfo window
+	# CreateEpisodesTable class is in series_tracker.py
 	
 	episode_marked = pyqtSignal() # This is a signal that will be emited after episode is marked as watched.
-	
+
 	def __init__(self, IMDB_id):
 		QObject.__init__(self) # I don't know whats the difference compared to super. I coppied that from pythoncentral.io
 		self.IMDB_id = IMDB_id
 		self.sql_select_shows = ""
 		self.table_column_count = 5
-		self.horizontal_header_labels = ["", "Episode ID", "Air Date", "Episode Title", ""]		
+		self.horizontal_header_labels = ["", "Episode ID", "Air Date", "Episode Title", ""]
 
-	# Marks episode as watched and repopulates table with updated data.
-	def mark_watched(self, IMDB_id, episode_IMDB_id):
-		mark_episode = QSqlQuery("UPDATE %s SET episode_watched = 1 WHERE episode_IMDB_id = '%s'" % (IMDB_id, episode_IMDB_id))
-		mark_episode.exec_()
-		self.refill_episode_table()
-		self.episode_marked.emit() # Emiting signal
+	def insert_table_row(self, row_count, episode, IMDB_id):
 
-	def refill_episode_table(self):
-		self.table_model.setRowCount(0)
-		self.fill_episode_table()
-		self.episode_table.scrollToBottom()
-		
-		
+		# Adding row to the table
+		self.table_model.insertRow(row_count)
+		# Getting value of shows episode_watched cell
+		episode_state = episode.value("episode_watched")
+		# Setting checkbox to checked or unchecked depending on episode beeing watched or not
+
+		show_watched = QStandardItem()
+		# Making Checkbox not editable
+		show_watched.setFlags(Qt.ItemIsEditable)
+
+		# Setting background color for current row, checkbox's checkmark and setting "mark_watched" button status depending if episode is watched or not.
+		if episode_state == 1:
+			show_watched.setCheckState(Qt.Checked)
+			show_watched_color = QColor(200, 230, 255)
+			mark_button = QStandardItem("Not Watched")
+			mark_button_color = QColor(230, 230, 230)
+		else:
+			show_watched.setCheckState(Qt.Unchecked)
+			show_watched_color = QColor(200, 255, 170)
+			mark_button = QStandardItem("Watched")
+			mark_button_color = QColor(0, 0, 0)
+
+		# Setting background color to red if current_date is smaller than air_date of the episode.
+		if episode.value("air_date") > self.current_year + "-" + self.current_month_day or episode.value("air_date") == None or len(episode.value("air_date")) < 8:
+
+			show_watched_color = QColor(255, 170, 175)
+
+		# Setting different values to different culumns of the row for the query result.
+		self.table_model.setItem(row_count, 0, show_watched)
+		self.table_model.item(row_count, 0).setBackground(show_watched_color)
+		self.table_model.setItem(row_count, 1, QStandardItem(episode.value("episode_seasonal_id")))
+		self.table_model.item(row_count, 1).setBackground(show_watched_color)
+		self.table_model.setItem(row_count, 2, QStandardItem(episode.value("air_date")))
+		self.table_model.item(row_count, 2).setBackground(show_watched_color)
+		self.table_model.setItem(row_count, 3, QStandardItem(episode.value("episode_title")))
+		self.table_model.item(row_count, 3).setBackground(show_watched_color)
+		self.table_model.setItem(row_count, 4, mark_button)
+		self.table_model.item(row_count, 4).setTextAlignment(Qt.AlignCenter)
+		self.table_model.item(row_count, 4).setForeground(mark_button_color)
+		self.table_model.setItem(row_count, 5, QStandardItem(episode.value("episode_IMDB_id")))
+
+	def mark_episode(self, pos):	
+		# Marks episode when clicked on button-cell.
+		if pos.column() == 4:
+			episode_button = self.table_model.item(pos.row(), pos.column()).text()
+			episode_IMDB_id = self.table_model.item(pos.row(), 5).text()
+			
+			if episode_button == "Watched":
+				episode_state = "1"
+				button_text = "Not Watched"			
+				checkbox_state = Qt.Checked
+				episode_watched_color = QColor(200, 230, 255)
+				mark_button_color = QColor(230, 230, 230)
+			else:
+				return
+
+			mark_episode = QSqlQuery("UPDATE %s SET episode_watched = %s WHERE episode_IMDB_id = '%s'" % (self.IMDB_id, episode_state, episode_IMDB_id))
+			mark_episode.exec_()
+			self.table_model.setData(pos, button_text) # Changes button's text.
+			self.table_model.item(pos.row(), 4).setForeground(mark_button_color)
+			self.table_model.item(pos.row(), 0).setCheckState(checkbox_state) # Changes state of checkbox
+
+			# Changes background color of the row.
+			for n in range(4):
+				self.table_model.item(pos.row(), n).setBackground(episode_watched_color)
+
+			self.episode_marked.emit()

@@ -8,10 +8,10 @@ from functools import partial
 # PyQt5 imports
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QDialog, QScrollArea, QComboBox, QGridLayout, QTableWidget, QTableWidgetItem
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
-from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, QSize
+from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, QSize, QPoint
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 
-from series_tracker import CreateShowEpisodesTableNotWatched
+from series_tracker import CreateShowEpisodeTable
 from misc import center
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
@@ -299,7 +299,7 @@ class OpenMarkAsNotWatched(QWidget):
 
 		self.layout = QVBoxLayout()
 		
-		self.episodes_table = MarkNotWatchedEpisodeTable(self.IMDB_id)
+		self.episodes_table = CreateShowEpisodeTable(self.IMDB_id)
 		self.episodes_table.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
 		self.episodes_table.create_table()
 		
@@ -358,11 +358,3 @@ class OpenMarkAsNotWatched(QWidget):
 
 		self.episodes_table.refill_episode_table()
 
-
-class MarkNotWatchedEpisodeTable(CreateShowEpisodesTableNotWatched):
-	
-	def refill_episode_table(self):
-
-		self.table_model.setRowCount(0)
-		self.fill_episode_table()
-		self.episode_table.scrollToBottom()
