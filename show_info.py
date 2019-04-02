@@ -4,9 +4,10 @@
 
 # Python3 imports
 import webbrowser
+from urllib import request
 
 # PyQt5 imports
-from PyQt5.QtWidgets import QDialog, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QComboBox, QMenu, QDesktopWidget
+from PyQt5.QtWidgets import QDialog, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QComboBox, QMenu, QDesktopWidget, QSizePolicy
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QFont, QPixmap
 from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, pyqtSignal, QObject, QSize
 
@@ -14,8 +15,7 @@ from series_tracker import CreateShowEpisodeTable
 from show_info_mark import *
 from show_info_update import *
 from show_info_manage import *
-from misc import center
-from show_covers import ShowCovers
+from misc import center, init_settings
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
 
@@ -37,7 +37,8 @@ class OpenShowWindow(QWidget):
 
 		self.layout = QGridLayout()
 		
-		self.create_cover_box()
+		self.cover_box = QGroupBox() # Cover box layout
+		self.cover_box.layout = QGridLayout()  # Cover box layout
 		
 		self.make_show_info_box()
 		
@@ -136,6 +137,7 @@ class OpenShowWindow(QWidget):
 		self.show_info_box.setLayout(self.show_info_box.layout)
 		
 		self.fill_show_info_box()
+		self.create_cover_box()
 		
 	def fill_show_info_box(self):
 		self.label_title.setText(self.title)
@@ -163,10 +165,35 @@ class OpenShowWindow(QWidget):
 		
 	def create_cover_box(self):
 		# Creates cover box. And add poster if there is one downloaded. If not shows a button to download a poster.
-		self.cover_box = QLabel() # Poster placeholder
-		self.cover_box.setAlignment(Qt.AlignCenter)
-		cover = QPixmap(settings.value("coverDir") + self.IMDB_id + ".jpg")#.load(settings.value("coverDir") + self.IMDB_id + ".jpg")
-		self.cover_box.setPixmap(cover.scaled(QSize(200, 300), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+		
+		if QPixmap().load(settings.value("coverDir") + self.IMDB_id + ".jpg") == True:
+			# If there is a cover in .local/share/SeriesTracker/covers folder it is loaded.
+			self.cover_box.cover = QLabel() # Poster placeholder
+			self.cover_box.cover.setAlignment(Qt.AlignCenter)
+			image = QPixmap(settings.value("coverDir") + self.IMDB_id + ".jpg")
+			self.cover_box.cover.setPixmap(image.scaled(QSize(200, 300), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+			self.cover_box.layout.addWidget(self.cover_box.cover)
+		else:
+			# If cover hasn't been downloaded yet button to download one is displayed.
+			self.cover_box.button = QPushButton("Download Cover")
+			self.cover_box.button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+			self.cover_box.button.setFocusPolicy(Qt.NoFocus)
+			self.cover_box.button.clicked.connect(self.download_cover)
+			self.cover_box.layout.addWidget(self.cover_box.button)
+			
+		self.cover_box.setLayout(self.cover_box.layout)
+		
+	def download_cover(self):
+		# Downloads cover for a show and displays it.
+		path_to_cover = settings.value("coverDir") + self.IMDB_id + ".jpg"
+		
+		with open(path_to_cover, "bw") as f:
+			f.write(request.urlopen(self.image).read())
+
+		f.close()
+		
+		self.cover_box.layout.removeWidget(self.cover_box.button) # Removes botton from cover box.
+		self.create_cover_box() # Recreates cover box
 		
 	def create_buttons(self):
 		

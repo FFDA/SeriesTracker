@@ -606,6 +606,6 @@ class CreateShowEpisodeTable(CreateEpisodesTable):
 
 
 if __name__ == "__main__":
-	app = QApplication(sys.argv)	
+	app = QApplication(sys.argv)
 	mainWindow = mainWindow()
 	sys.exit(app.exec_())

@@ -1,7 +1,10 @@
 #! /usr/bin/python3
 
 from PyQt5.QtWidgets import QDesktopWidget
+from PyQt5.QtCore import QStandardPaths, QDir, QSettings
 import re
+
+settings = QSettings("SeriesTracker", "SeriesTracker")
 
 def center(self):
 	# Copied this function from https://gist.github.com/saleph/163d73e0933044d0e2c4
@@ -29,3 +32,16 @@ def check_if_input_contains_IMDB_id(user_input):
             return pattern_to_look_for.search(user_input)[0]
     else:
         return False
+
+def init_settings():
+	# Sets settings that are used.
+	# Path to database location is set in database.py
+	
+	cover_folder = QStandardPaths.standardLocations(QStandardPaths.GenericDataLocation)[0] + "/SeriesTracker/covers/" # Path to a folder where show covers will be saved.
+	
+	settings.setValue("width", 1200)
+	settings.setValue("height", 800)
+	settings.setValue("coverDir", cover_folder)
+	
+	QDir().mkpath(settings.value("coverDir")) # Creates a path to cover folder
+
