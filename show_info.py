@@ -7,14 +7,15 @@ import webbrowser
 
 # PyQt5 imports
 from PyQt5.QtWidgets import QDialog, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QComboBox, QMenu, QDesktopWidget
-from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QFont
-from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, pyqtSignal, QObject
+from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QFont, QPixmap
+from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, pyqtSignal, QObject, QSize
 
 from series_tracker import CreateShowEpisodeTable
 from show_info_mark import *
 from show_info_update import *
 from show_info_manage import *
 from misc import center
+from show_covers import ShowCovers
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
 
@@ -36,11 +37,12 @@ class OpenShowWindow(QWidget):
 
 		self.layout = QGridLayout()
 		
+		self.create_cover_box()
+		
 		self.make_show_info_box()
 		
 		self.episodes_table = CreateShowInfoEpisodeTable(self.IMDB_id) # Initiating episode table
 		
-
 		self.episodes_table.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
 		self.episodes_table.create_table()	
 		
@@ -49,7 +51,8 @@ class OpenShowWindow(QWidget):
 		self.button_ok = QPushButton("OK")
 		self.button_ok.clicked.connect(self.close)
 
-		self.layout.addWidget(self.show_info_box, 0, 0, 8, 12)
+		self.layout.addWidget(self.cover_box, 0, 0, 8, 4)
+		self.layout.addWidget(self.show_info_box, 0, 4, 8, 8)
 		self.layout.addWidget(self.button_box, 9, 0, 1, 12)
 		self.layout.addWidget(self.episodes_table.episode_table, 10, 0, 8, 12)
 		self.layout.addWidget(self.button_ok, 18, 11, 1, 1)
@@ -72,7 +75,8 @@ class OpenShowWindow(QWidget):
 		self.running_time = show_info.value("running_time")
 		self.years_aired = show_info.value("years_aired")
 		self.finished_watching = show_info.value("finished_watching")
-		self.unknown_season = show_info.value("unknown_season")
+		self.unknown_season = show_info.value("unknown_season")	
+
  
 	def make_show_info_box(self):
 		
@@ -80,8 +84,6 @@ class OpenShowWindow(QWidget):
 		self.show_info_box = QGroupBox()
 		self.show_info_box.layout = QGridLayout()
 
-		image_box = QLabel() # Poster placeholder
-		image_box.setMinimumSize(200, 300)
 		info_box = QGroupBox() # Group box containing Show's info
 		info_box.layout = QVBoxLayout()
 		info_box.setMinimumSize(700, 300)
@@ -129,8 +131,8 @@ class OpenShowWindow(QWidget):
 
 		info_box.setLayout(info_box.layout)
 
-		self.show_info_box.layout.addWidget(image_box, 0, 0)
-		self.show_info_box.layout.addWidget(info_box, 0, 1, 1, 3)
+		#self.show_info_box.layout.addWidget(image_box, 0, 0)
+		self.show_info_box.layout.addWidget(info_box)
 		self.show_info_box.setLayout(self.show_info_box.layout)
 		
 		self.fill_show_info_box()
@@ -158,7 +160,14 @@ class OpenShowWindow(QWidget):
 		self.label_in_list.setText(current_list)
 		
 		self.label_synopsis.setText(self.synopsis)
-	
+		
+	def create_cover_box(self):
+		# Creates cover box. And add poster if there is one downloaded. If not shows a button to download a poster.
+		self.cover_box = QLabel() # Poster placeholder
+		self.cover_box.setAlignment(Qt.AlignCenter)
+		cover = QPixmap(settings.value("coverDir") + self.IMDB_id + ".jpg")#.load(settings.value("coverDir") + self.IMDB_id + ".jpg")
+		self.cover_box.setPixmap(cover.scaled(QSize(200, 300), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+		
 	def create_buttons(self):
 		
 		self.button_box = QGroupBox()

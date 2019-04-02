@@ -7,7 +7,7 @@ import sqlite3
 from functools import partial
 
 # Importing PyQt5 stuff
-from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
+from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, QCoreApplication
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QDialog, QShortcut
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
@@ -19,6 +19,7 @@ from add_show import *
 
 # PyQt5 settings
 settings = QSettings("SeriesTracker", "SeriesTracker")
+
 settings.setValue("width", 1200)
 settings.setValue("height", 800)
 
