@@ -582,7 +582,7 @@ class CreateShowEpisodeTable(CreateEpisodesTable):
 			
 			if episode_button == "Watched":
 				episode_state = "1"
-				button_text = " Not Watched"			
+				button_text = "Not Watched"			
 				checkbox_state = Qt.Checked
 				episode_watched_color = QColor(200, 230, 255)
 			else:
