@@ -105,7 +105,7 @@ class TabWidget(QWidget):
 
 		# Setting tab2 laytout to vertival
 		self.tab2.layout = QGridLayout()
-
+		
 		self.shows_table = CreateShowTables()
 
 		self.shows_table.create_buttons()
@@ -356,45 +356,66 @@ class CreateShowTables:
 		self.button_add_show_box.layout.addWidget(button_add_show)		
 		self.button_add_show_box.setLayout(self.button_add_show_box.layout)
 		
+		self.get_show_count()
+		
 		self.button_box = QGroupBox()
 		self.button_box.layout = QHBoxLayout()
 
-		btn_all_shows = QPushButton("All Shows")
-		btn_watchlist = QPushButton("Watchlist")
-		btn_finished_watching = QPushButton("Finished Watching") 
-		btn_plan_to_watch = QPushButton("Plan to Watch")
+		self.btn_all_shows = QPushButton("All Shows " + "(" + self.count_all + ")")
+		self.btn_watchlist = QPushButton("Watchlist " + "(" + self.count_watchlist + ")")
+		self.btn_finished_watching = QPushButton("Finished Watching " + "(" + self.count_finished_watching + ")") 
+		self.btn_plan_to_watch = QPushButton("Plan to Watch " + "(" + self.count_plan_to_watch + ")")
 
 		# Making buttons checkable to make them look differently, and to make them work exclusively
-		btn_all_shows.setCheckable(True)
-		btn_all_shows.setFocusPolicy(Qt.NoFocus)
-		btn_watchlist.setCheckable(True)
-		btn_watchlist.setFocusPolicy(Qt.NoFocus)
-		btn_finished_watching.setCheckable(True)
-		btn_finished_watching.setFocusPolicy(Qt.NoFocus)
-		btn_plan_to_watch.setCheckable(True)
-		btn_plan_to_watch.setFocusPolicy(Qt.NoFocus)
+		self.btn_all_shows.setCheckable(True)
+		self.btn_all_shows.setFocusPolicy(Qt.NoFocus)
+		self.btn_watchlist.setCheckable(True)
+		self.btn_watchlist.setFocusPolicy(Qt.NoFocus)
+		self.btn_finished_watching.setCheckable(True)
+		self.btn_finished_watching.setFocusPolicy(Qt.NoFocus)
+		self.btn_plan_to_watch.setCheckable(True)
+		self.btn_plan_to_watch.setFocusPolicy(Qt.NoFocus)
 
 		# Setting default button
-		btn_all_shows.setChecked(True)	
+		self.btn_all_shows.setChecked(True)	
 
 		# Set buttons to work exclusively 
-		btn_all_shows.setAutoExclusive(True)
-		btn_watchlist.setAutoExclusive(True)
-		btn_finished_watching.setAutoExclusive(True)
-		btn_plan_to_watch.setAutoExclusive(True)
+		self.btn_all_shows.setAutoExclusive(True)
+		self.btn_watchlist.setAutoExclusive(True)
+		self.btn_finished_watching.setAutoExclusive(True)
+		self.btn_plan_to_watch.setAutoExclusive(True)
 
-		self.button_box.layout.addWidget(btn_all_shows)
-		self.button_box.layout.addWidget(btn_watchlist)
-		self.button_box.layout.addWidget(btn_finished_watching)
-		self.button_box.layout.addWidget(btn_plan_to_watch)
+		self.button_box.layout.addWidget(self.btn_all_shows)
+		self.button_box.layout.addWidget(self.btn_watchlist)
+		self.button_box.layout.addWidget(self.btn_finished_watching)
+		self.button_box.layout.addWidget(self.btn_plan_to_watch)
 
 		# Linking buttons with function and passing different sql_query
-		btn_all_shows.clicked.connect(partial(self.refill_table, "SELECT * FROM shows ORDER BY title ASC"))
-		btn_watchlist.clicked.connect(partial(self.refill_table, "SELECT * FROM shows WHERE finished_watching = 0 ORDER BY title ASC"))
-		btn_finished_watching.clicked.connect(partial(self.refill_table, "SELECT * FROM shows WHERE  finished_watching = 1 ORDER BY title ASC"))
-		btn_plan_to_watch.clicked.connect(partial(self.refill_table, "SELECT * FROM shows WHERE finished_watching = 2 ORDER BY title ASC"))
+		self.btn_all_shows.clicked.connect(partial(self.refill_table, "SELECT * FROM shows ORDER BY title ASC"))
+		self.btn_watchlist.clicked.connect(partial(self.refill_table, "SELECT * FROM shows WHERE finished_watching = 0 ORDER BY title ASC"))
+		self.btn_finished_watching.clicked.connect(partial(self.refill_table, "SELECT * FROM shows WHERE  finished_watching = 1 ORDER BY title ASC"))
+		self.btn_plan_to_watch.clicked.connect(partial(self.refill_table, "SELECT * FROM shows WHERE finished_watching = 2 ORDER BY title ASC"))
 
 		self.button_box.setLayout(self.button_box.layout)
+		
+	def get_show_count(self):
+		# Retrives how many shows there are in each list
+		sql_count_all = QSqlQuery("SELECT COUNT(*) FROM shows")
+		sql_count_all.first()
+		self.count_all = str(sql_count_all.value(0))
+		
+		sql_count_watchlist = QSqlQuery("SELECT COUNT(*) FROM shows WHERE finished_watching = 0")
+		sql_count_watchlist.first()
+		self.count_watchlist = str(sql_count_watchlist.value(0))
+		
+		sql_count_finished_watching = QSqlQuery("SELECT COUNT() FROM shows WHERE finished_watching = 1")
+		sql_count_finished_watching.first()
+		self.count_finished_watching = str(sql_count_finished_watching.value(0))
+		
+		sql_count_plan_to_watch = QSqlQuery("SELECT COUNT() FROM shows WHERE finished_watching = 2")
+		sql_count_plan_to_watch.first()
+		self.count_plan_to_watch = str(sql_count_plan_to_watch.value(0))
+
 
 	def create_filter_box(self):
 		
@@ -468,6 +489,15 @@ class CreateShowTables:
 		self.table_model.setRowCount(0)
 		self.shows_table.doubleClicked.disconnect(self.open_show) # Disconnects table with double click signal. Otherwise with every chage of the table when buttons are used it will add more signals. This signal will be reimplemented with fill_table().
 		self.fill_table()
+		self.redo_buttons()
+
+	
+	def redo_buttons(self):
+		self.get_show_count()
+		self.btn_all_shows.setText("All Shows " + "(" + self.count_all + ")")
+		self.btn_watchlist.setText("Watchlist " + "(" + self.count_watchlist + ")")
+		self.btn_finished_watching.setText("Finished Watching " + "(" + self.count_finished_watching + ")") 
+		self.btn_plan_to_watch.setText("Plan to Watch " + "(" + self.count_plan_to_watch + ")")
 
 	def open_show(self, pos):
 		# Clicking action is done on the show_table, but data actually has to be fetched from QSortFilterProxyModel.
@@ -484,6 +514,7 @@ class CreateShowTables:
 		
 		if result == QDialog.Accepted:
 			self.refill_table(self.sql_query)
+
 
 class CreateShowEpisodeTable(CreateEpisodesTable):
 	# Base class to create episode that shows all episodes id the class and allows episodes to be marked as watched/unwatched.
