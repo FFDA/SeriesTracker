@@ -7,7 +7,7 @@ import sqlite3
 from functools import partial
 
 # Importing PyQt5 stuff
-from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, QCoreApplication
+from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QDialog, QShortcut
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
@@ -17,11 +17,7 @@ from misc import *
 from show_info import *
 from add_show import *
 
-# PyQt5 settings
 settings = QSettings("SeriesTracker", "SeriesTracker")
-
-settings.setValue("width", 1200)
-settings.setValue("height", 800)
 
 class mainWindow(QMainWindow):
 
@@ -30,10 +26,13 @@ class mainWindow(QMainWindow):
 		self.initUI()	
 
 	def initUI(self):
+		if settings.contains("width") == False:
+			init_settings()
+		
 		db = DatabaseConnection
 		db.check(self)
 		db.connect()
-		self.resize(settings.value("width"), settings.value("height"))	
+		self.resize(int(settings.value("width")), int(settings.value("height")))
 		center(self)
 		self.setWindowTitle("Series Episode Tracker")
 		self.tab_widget = TabWidget(self)
@@ -637,6 +636,7 @@ class CreateShowEpisodeTable(CreateEpisodesTable):
 
 
 if __name__ == "__main__":
+	
 	app = QApplication(sys.argv)
 	mainWindow = mainWindow()
 	sys.exit(app.exec_())

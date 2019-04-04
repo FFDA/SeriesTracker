@@ -29,9 +29,9 @@ class OpenShowWindow(QWidget):
 		# Initiating Show Window
 		self.setAttribute(Qt.WA_DeleteOnClose)
 		self.fetch_show_info() # Getting all info ready
-		self.resize(settings.value("width"), settings.value("height"))
+		self.resize(int(settings.value("width")), int(settings.value("height")))
 		center(self)
-		self.setMinimumSize(settings.value("width"), settings.value("height"))
+		self.setMinimumSize(int(settings.value("width")), int(settings.value("height")))
 		self.setWindowTitle(self.title)
 		self.setWindowModality(Qt.ApplicationModal)
 

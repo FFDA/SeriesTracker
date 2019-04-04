@@ -14,8 +14,6 @@ from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 from series_tracker import CreateShowEpisodeTable
 from misc import center
 
-settings = QSettings("SeriesTracker", "SeriesTracker")
-
 class MarkSeasonAsNotWatched(QDialog):
 	
 	def __init__(self, IMDB_id, seasons, unknown_season, title):

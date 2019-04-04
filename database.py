@@ -6,7 +6,6 @@ from PyQt5.QtCore import QSettings
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
 
-
 class DatabaseConnection():
 	
 	def check(self):
