@@ -7,8 +7,7 @@ import sqlite3
 from functools import partial
 
 # Importing PyQt5 stuff
-#from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
-from PyQt5.QtCore import *
+from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QDialog, QShortcut
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
@@ -510,11 +509,16 @@ class CreateShowTables:
 		self.show_window.destroyed.connect(partial(self.refill_table, self.sql_query))
 		
 	def open_add_show(self):
-		self.open_add_show_window = AddShow()
-		result = self.open_add_show_window.exec_()
 		
-		if result == QDialog.Accepted:
-			self.refill_table(self.sql_query)
+		if has_internet_connection() == False:
+			CheckInternet("Please connect to internet").exec_() # This class is defined in misc.py
+			return
+		else:
+			self.open_add_show_window = AddShow()
+			result = self.open_add_show_window.exec_()	
+		
+			if result == QDialog.Accepted:
+				self.refill_table(self.sql_query)
 
 
 class CreateShowEpisodeTable(CreateEpisodesTable):

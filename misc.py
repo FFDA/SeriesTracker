@@ -1,7 +1,8 @@
 #! /usr/bin/python3
 
-from PyQt5.QtWidgets import QDesktopWidget
+from PyQt5.QtWidgets import QDesktopWidget, QDialog, QLabel, QPushButton, QVBoxLayout
 from PyQt5.QtCore import QStandardPaths, QDir, QSettings
+from PyQt5.QtNetwork import QNetworkInterface
 import re
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
@@ -45,3 +46,38 @@ def init_settings():
 	
 	QDir().mkpath(settings.value("coverDir")) # Creates a path to cover folder
 
+def has_internet_connection():
+	# Checks if there is an internet conncetion and returns True or False appropriately.
+	
+	ct = 0 
+	
+	for interface in QNetworkInterface().allInterfaces():
+		if (bool(interface.flags() & QNetworkInterface().IsUp and not interface.flags() & QNetworkInterface().IsLoopBack)) == True:
+			ct += 1
+	
+	if ct > 0: # This may give some problems in the future
+		return True
+	else:
+		return False
+
+class CheckInternet(QDialog):
+	# Prompts user with a message that is passed to this class.
+	# Has only one button "OK"
+	
+	def __init__(self, message):
+		super(CheckInternet, self).__init__()
+		self.message = message
+		self.initUI()
+		
+	def initUI(self):
+		self.setModal(True)
+		self.layout = QVBoxLayout()
+		message_label = QLabel(self.message)
+		
+		button_ok = QPushButton("OK")
+		button_ok.clicked.connect(self.accept)
+		
+		self.layout.addWidget(message_label)
+		self.layout.addWidget(button_ok)
+		self.setLayout(self.layout)
+		self.show()

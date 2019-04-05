@@ -15,7 +15,7 @@ from series_tracker import CreateShowEpisodeTable
 from show_info_mark import *
 from show_info_update import *
 from show_info_manage import *
-from misc import center, init_settings
+from misc import *
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
 
@@ -272,8 +272,13 @@ class OpenShowWindow(QWidget):
 		
 	def open_imdb_page(self):
 		# This function opens shows Webpage
-		imdb_url = "https://www.imdb.com/title/" + self.IMDB_id
-		webbrowser.open(imdb_url, new=2, autoraise=True)
+		
+		if has_internet_connection() == False:
+			CheckInternet("Please connect to internet").exec_() # This class is defined in misc.py
+			return
+		else:
+			imdb_url = "https://www.imdb.com/title/" + self.IMDB_id
+			webbrowser.open(imdb_url, new=2, autoraise=True)
 	
 	def print_season(self, season):
 		# This function set new SQL query to fetch episodes from the database. 
@@ -290,11 +295,16 @@ class OpenShowWindow(QWidget):
 		self.episodes_table.refill_episode_table()
 
 	def open_fix_season(self):
-		self.open_fix_season_window = FixSeason(self.IMDB_id, self.seasons, self.unknown_season, self.title)
-		result = self.open_fix_season_window.exec_()
 		
-		if result == QDialog.Accepted:
-			self.episodes_table.refill_episode_table()
+		if has_internet_connection() == False:
+			CheckInternet("Please connect to internet").exec_() # This class is defined in misc.py
+			return
+		else:
+			self.open_fix_season_window = FixSeason(self.IMDB_id, self.seasons, self.unknown_season, self.title)
+			result = self.open_fix_season_window.exec_()
+			
+			if result == QDialog.Accepted:
+				self.episodes_table.refill_episode_table()
 	
 	def open_mark_episode_as_not_watched(self):
 		# This function detects if window was closed and refill episode table.
@@ -324,26 +334,38 @@ class OpenShowWindow(QWidget):
 			self.refill_show_info()
 			
 	def open_update_single_season(self):
-		self.open_update_single_season_window = UpdateSingleSeason(self.IMDB_id, self.seasons, self.unknown_season, self.title)
-		result = self.open_update_single_season_window.exec_()
-		
-		if result == QDialog.Accepted:
-			self.episodes_table.refill_episode_table()
+		if has_internet_connection() == False:
+			CheckInternet("Please connect to internet").exec_() # This class is defined in misc.py
+			return
+		else:
+			self.open_update_single_season_window = UpdateSingleSeason(self.IMDB_id, self.seasons, self.unknown_season, self.title)
+			result = self.open_update_single_season_window.exec_()
+			
+			if result == QDialog.Accepted:
+				self.episodes_table.refill_episode_table()
 	
 	def open_update_last_3_seasons(self):
-		self.open_update_single_season_window = UpdateThreeSeasons(self.IMDB_id, self.seasons, self.unknown_season, self.title)
-		result = self.open_update_single_season_window.exec_()
-		
-		if result == QDialog.Accepted:
-			self.refill_episode_table()
+		if has_internet_connection() == False:
+			CheckInternet("Please connect to internet").exec_() # This class is defined in misc.py
+			return
+		else:
+			self.open_update_single_season_window = UpdateThreeSeasons(self.IMDB_id, self.seasons, self.unknown_season, self.title)
+			result = self.open_update_single_season_window.exec_()
+			
+			if result == QDialog.Accepted:
+				self.refill_episode_table()
 			
 	def open_update_show_info(self):
-		self.open_update_show_info_window = UpdateShowInfo(self.IMDB_id, self.title)
-		result = self.open_update_show_info_window.exec_()
-		
-		if result == QDialog.Accepted:
-			self.fetch_show_info()
-			self.fill_show_info_box()
+		if has_internet_connection() == False:
+			CheckInternet("Please connect to internet").exec_() # This class is defined in misc.py
+			return
+		else:
+			self.open_update_show_info_window = UpdateShowInfo(self.IMDB_id, self.title)
+			result = self.open_update_show_info_window.exec_()
+			
+			if result == QDialog.Accepted:
+				self.fetch_show_info()
+				self.fill_show_info_box()
 			
 	def open_change_list(self):
 		self.open_change_list_window = ChangeList(self.IMDB_id, self.finished_watching, self.title)

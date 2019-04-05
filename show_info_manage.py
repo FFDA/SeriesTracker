@@ -239,7 +239,6 @@ class DeleteShow(QDialog):
 		super(DeleteShow, self).__init__()
 		self.IMDB_id = IMDB_id
 		self.title = title
-		
 		self.initUI()
 		
 	def initUI(self):

@@ -14,6 +14,8 @@ from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 from series_tracker import CreateShowEpisodeTable
 from misc import center
 
+settings = QSettings("SeriesTracker", "SeriesTracker")
+
 class MarkSeasonAsNotWatched(QDialog):
 	
 	def __init__(self, IMDB_id, seasons, unknown_season, title):
@@ -289,9 +291,9 @@ class OpenMarkAsNotWatched(QWidget):
 		self.setAttribute(Qt.WA_DeleteOnClose)
 		
 	def initUI(self):
-		self.resize(settings.value("width"), settings.value("height"))
+		self.resize(int(settings.value("width")), int(settings.value("height")))
 		center(self)
-		self.setMinimumSize(settings.value("width"), settings.value("height"))
+		self.setMinimumSize(int(settings.value("width")), int(settings.value("height")))
 		self.setWindowTitle("Mark %s episodes as not watched" % self.title)
 		self.setWindowModality(Qt.ApplicationModal) # This function disables other windows untill user closes Show Window
 
