@@ -1,7 +1,7 @@
 #! /usr/bin/python3
 
 from imdbpie import Imdb
-from misc import center
+from misc import center, check_if_input_contains_IMDB_id
 import re
 
 from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QLabel, QProgressBar, QTextEdit, QGridLayout
@@ -472,8 +472,12 @@ class UpdateShowInfo(QDialog):
 		
 		self.progress_bar.setValue(5)
 		
+		first_episode_imdb_id = check_if_input_contains_IMDB_id(fetched_show_info['episodes'][0]['id']) # This is needed because IMDB shows different running time for tvMiniSeries (full run) and tvSeries (just for an episode).
+		
+		episode_run_time = self.imdb.get_title(first_episode_imdb_id)
+		
 		try:
-			fetched_running_time = show_info_year["runningTimeInMinutes"]
+			fetched_running_time = episode_run_time['base']["runningTimeInMinutes"]
 		except KeyError:
 			fetched_running_time = 0
 		
@@ -482,16 +486,6 @@ class UpdateShowInfo(QDialog):
 			fetched_years_aired = show_start_year		
 		else:
 			fetched_years_aired = str(show_start_year) + " - " + str(show_end_year)
-		
-		#self.info_box.append(current_years_aired)
-		#self.info_box.append(str(years_aired))
-
-		#fetched_finished_airing = len(years_aired)
-
-		#if len(years_aired) == 2:
-		#	fetched_years_aired = years_aired[0] + " - " + years_aired[1]
-		#elif len(years_aired) == 1:
-		#	fetched_years_aired = years_aired[0] + " - "
 		
 		self.progress_bar.setValue(6)
 		
