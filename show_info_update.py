@@ -211,23 +211,13 @@ class UpdateSingleSeason(QDialog):
 						
 						# Setting updated episode counter +1 to print how many episodes where updated.
 						updated_episode_count += 1
-						self.info_box.append("Updated episode {} {}".format(fetched_episode_seasonal_id, fetched_episode_title))
+						self.info_box.append("Updated episode {episode_seasonal_id}: , '{}' => '{}' ".format(episode_seasonal_id = fetched_episode_seasonal_id))
+						self.info_box.append("		Title: '{old_episode_title}' => '{new_episode_title}'".format(old_episode_title = current_episode_title, new_episode_title = fetched_episode_title))
+						self.info_box.append("		Air Date: '{old_air_date}' => '{new_air_date}'".format(old_air_date = current_air_date, new_air_date = fetched_air_date))
 				
 				# THIS PART DEALS WHITH EXISTING EPISODES FORM UNKNONW SEASON!
 				# The only difference between this and episode check above is that this one does not check for difference in seaosns, while still trying to add one.
 				else:
-					
-					# Leaving these here for a moment, because I might need them for debugging
-					# print(season_in_database)
-					# print(season_in_IMDB)
-					# print(current_episode_number)
-					# print(fetched_episode_number)
-					# print(current_episode_year)
-					# print(fetched_episode_year)
-					# print(current_episode_title)
-					# print(fetched_episode_title)
-					# print(current_episode_air_date)
-					# print(fetched_episode_air_date)
 					
 					if current_episode_number != fetched_episode_number or current_episode_year != fetched_episode_year or current_episode_title != fetched_episode_title or current_episode_air_date != fetched_episode_air_date:
 						
@@ -246,7 +236,9 @@ class UpdateSingleSeason(QDialog):
 						
 						# Setting updated episode counter +1 to print how many episodes where updated.
 						updated_episode_count += 1
-						self.info_box.append("Updated episode {} {}".format(fetched_episode_seasonal_id, fetched_episode_title))
+						self.info_box.append("Updated episode {episode_seasonal_id}: , '{}' => '{}' ".format(episode_seasonal_id = fetched_episode_seasonal_id))
+						self.info_box.append("		Title: '{old_episode_title}' => '{new_episode_title}'".format(old_episode_title = current_episode_title, new_episode_title = fetched_episode_title))
+						self.info_box.append("		Air Date: '{old_air_date}' => '{new_air_date}'".format(old_air_date = current_air_date, new_air_date = fetched_air_date))
 
 			# If episode does not exist in the database it is inserted in as a new record. The same steps are taken as in add new shows episodes in the add_show.py file.
 			# This part should work the same for the Normal and Unknown seasons. 

@@ -7,10 +7,12 @@ import sqlite3
 from functools import partial
 
 # Importing PyQt5 stuff
-from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
+#from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
+from PyQt5.QtCore import *
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QDialog, QShortcut
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
+from PyQt5.QtNetwork import QNetworkInterface
 
 from database import *
 from misc import *
@@ -101,7 +103,7 @@ class TabWidget(QWidget):
 
 
 	def tab2UI(self):
-
+		
 		# Setting tab2 laytout to vertival
 		self.tab2.layout = QGridLayout()
 		
