@@ -445,9 +445,9 @@ class UpdateShowInfo(QDialog):
 		self.progress_bar.setValue(2)		
 		
 		# Retrieving show values from IMDB
-		fetched_show_info = self.imdb.get_title_episodes_detailed(IMDB_id, 1)
+		fetched_show_info_detailed = self.imdb.get_title_episodes_detailed(IMDB_id, 1)
 		
-		fetched_season_list = fetched_show_info["allSeasons"]
+		fetched_season_list = fetched_show_info_detailed["allSeasons"]
 		self.progress_bar.setValue(3)
 
 		if None in fetched_season_list:
@@ -462,24 +462,17 @@ class UpdateShowInfo(QDialog):
 		# Tries to get years when show started and finish airing.
 		# If it can't get a second year it means, that show is still airing. It's not always the case, but it best I can do.
 		# If finished_aird last year matches the start year it means that show aired just for one year.
-		show_info_year = self.imdb.get_title_auxiliary(IMDB_id) # Retrieving show's info from IMDB
-		show_start_year = show_info_year["seriesStartYear"]
+		show_info_auxiliary = self.imdb.get_title_auxiliary(IMDB_id) # Retrieving show's info from IMDB
+		show_start_year = show_info_auxiliary["seriesStartYear"]
 		try:
-			show_end_year = show_info_year["seriesEndYear"]
+			show_end_year = show_info_auxiliary["seriesEndYear"]
 		except KeyError:
 			show_end_year = ""
 			fetched_finished_airing = 1	
 		
 		self.progress_bar.setValue(5)
 		
-		first_episode_imdb_id = check_if_input_contains_IMDB_id(fetched_show_info['episodes'][0]['id']) # This is needed because IMDB shows different running time for tvMiniSeries (full run) and tvSeries (just for an episode).
-		
-		episode_run_time = self.imdb.get_title(first_episode_imdb_id)
-		
-		try:
-			fetched_running_time = episode_run_time['base']["runningTimeInMinutes"]
-		except KeyError:
-			fetched_running_time = 0
+		fetched_running_time = self.get_running_time(fetched_show_info_detailed, show_info_auxiliary)
 		
 		# Setting years airing that will be inserted into database.
 		if show_start_year == show_end_year:
@@ -523,7 +516,7 @@ class UpdateShowInfo(QDialog):
 			self.info_box.append("You should update shows seasons")
 			something_updated_trigger = 1
 			
-			
+		
 		self.progress_bar.setValue(7)
 
 		self.info_box.append("")
@@ -534,3 +527,31 @@ class UpdateShowInfo(QDialog):
 
 		self.progress_bar.setValue(8)
 
+	def get_running_time(self, fetched_show_info_detailed, show_info_auxiliary):
+		# Moved code that retrieves running time to this function, because there are a lot of nuance with it on IMDB side.
+		first_episode_imdb_id = check_if_input_contains_IMDB_id(fetched_show_info_detailed['episodes'][0]['id']) # This is needed because IMDB shows different running time for tvMiniSeries (full run) and tvSeries (just for an episode).
+			
+		episode_run_time = self.imdb.get_title(first_episode_imdb_id)
+		
+		if show_info_auxiliary['titleType'] == 'tvSeries':
+			# This if statement tries to get running_time for "normal" TV series.			
+			if "runningTimeInMinutes" in show_info_auxiliary:
+				return show_info_auxiliary["runningTimeInMinutes"]
+			elif "runningTimeInMinutes" in episode_run_time['base']:
+				return episode_run_time['base']["runningTimeInMinutes"]
+			else:
+				return 0
+		
+		else:
+			# This if statement tries to get running_time for "mini" TV Series			
+			if "runningTimeInMinutes" in episode_run_time['base']:
+				# This if tries to retrieve running_time from one of the episodes of the show.
+				return episode_run_time['base']["runningTimeInMinutes"]
+			elif "runningTimeInMinutes" in show_info_auxiliary:
+				# This one calculates episode runtime bu getting running time of all episode and dividing it by episode count
+				full_run_time = show_info_auxiliary["runningTimeInMinutes"]
+				episode_count = show_info_auxiliary["numberOfEpisodes"]
+				return full_run_time / episode_count
+			else:
+				# If everything fails it running time will be set as 0
+				return 0

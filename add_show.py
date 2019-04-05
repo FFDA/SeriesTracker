@@ -156,12 +156,6 @@ class AddShow(QDialog):
 		# Genres of the show
 		genres = " ".join(show_info["genres"])
 		
-		# Tries to get running time in minutes. If it fails it will asign 0
-		try:
-			running_time = show_info["runningTimeInMinutes"]
-		except KeyError:
-			running_time = 0
-	
 		# Tries to get years when show started and finish airing.
 		# If it can't get a second year it means, that show is still airing. It's not always the case, but it best I can do.
 		# If finished_aird last year matches the start year it means that show aired just for one year.
@@ -171,6 +165,9 @@ class AddShow(QDialog):
 		except KeyError:
 			show_end_year = ""
 			finished_airing = 1	
+		
+		fetched_show_info_detailed = fetched_show_info_detailed = self.imdb.get_title_episodes_detailed(IMDB_id, 1)
+		running_time = get_running_time(fetched_show_info_detailed, show_info_auxiliary)
 		
 		# Setting years airing that will be inserted into database.
 		if show_start_year == show_end_year:
@@ -204,10 +201,6 @@ class AddShow(QDialog):
 		
 		# Preparing SQL query to insert show into shows table
 		sql_insert_new_show_str = "INSERT INTO shows VALUES (:IMDB_id, :title, :image, :synopsis, :seasons, :genres, :running_time, :finished_airing, :years_aired, :finished_watching, :unknown_season)"
-		
-		#sql_insert_new_show_str2 = "INSERT INTO shows VALUES ('{}', '{}', '{}', '{}', {}, '{}', {}, {}, '{}', {}, {})".format(IMDB_id, title, image, synopsis, seasons, " ".join(genres), running_time, finished_airing,  years_aired, finished_watching, unknown_season)
-		#print(sql_insert_new_show_str2)
-		#self.info_box.append(sql_insert_new_show_str2)
 		
 		sql_insert_new_show = QSqlQuery()
 		sql_insert_new_show.prepare(sql_insert_new_show_str)
@@ -331,3 +324,33 @@ class AddShow(QDialog):
 		self.info_box.append("Total episodes: {}".format(added_episode_count))
 		
 		self.button_ok.setDisabled(False)
+
+	def get_running_time(self, fetched_show_info_detailed, show_info_auxiliary):
+		# Moved code that retrieves running time to this function, because there are a lot of nuance with it on IMDB side.
+		first_episode_imdb_id = check_if_input_contains_IMDB_id(fetched_show_info_detailed['episodes'][0]['id']) # This is needed because IMDB shows different running time for tvMiniSeries (full run) and tvSeries (just for an episode).
+			
+		episode_run_time = self.imdb.get_title(first_episode_imdb_id)
+		
+		if show_info_auxiliary['titleType'] == 'tvSeries':
+			# This if statement tries to get running_time for "normal" TV series.			
+			if "runningTimeInMinutes" in show_info_auxiliary:
+				return show_info_auxiliary["runningTimeInMinutes"]
+			elif "runningTimeInMinutes" in episode_run_time['base']:
+				return episode_run_time['base']["runningTimeInMinutes"]
+			else:
+				return 0
+		
+		else:
+			# This if statement tries to get running_time for "mini" TV Series			
+			if "runningTimeInMinutes" in episode_run_time['base']:
+				# This if tries to retrieve running_time from one of the episodes of the show.
+				return episode_run_time['base']["runningTimeInMinutes"]
+			elif "runningTimeInMinutes" in show_info_auxiliary:
+				# This one calculates episode runtime bu getting running time of all episode and dividing it by episode count
+				full_run_time = show_info_auxiliary["runningTimeInMinutes"]
+				episode_count = show_info_auxiliary["numberOfEpisodes"]
+				return full_run_time / episode_count
+			else:
+				# If everything fails it running time will be set as 0
+				return 0
+
