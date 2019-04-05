@@ -185,15 +185,19 @@ class OpenShowWindow(QWidget):
 		
 	def download_cover(self):
 		# Downloads cover for a show and displays it.
-		path_to_cover = settings.value("coverDir") + self.IMDB_id + ".jpg"
-		
-		with open(path_to_cover, "bw") as f:
-			f.write(request.urlopen(self.image).read())
+		if has_internet_connection() == False:
+			CheckInternet("Please connect to internet").exec_() # This class is defined in misc.py
+			return
+		else:
+			path_to_cover = settings.value("coverDir") + self.IMDB_id + ".jpg"
+			
+			with open(path_to_cover, "bw") as f:
+				f.write(request.urlopen(self.image).read())
 
-		f.close()
-		
-		self.cover_box.layout.removeWidget(self.cover_box.button) # Removes botton from cover box.
-		self.create_cover_box() # Recreates cover box
+			f.close()
+			
+			self.cover_box.layout.removeWidget(self.cover_box.button) # Removes botton from cover box.
+			self.create_cover_box() # Recreates cover box
 		
 	def create_buttons(self):
 		
