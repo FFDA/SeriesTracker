@@ -52,8 +52,8 @@ class OpenShowWindow(QWidget):
 		self.button_ok = QPushButton("OK")
 		self.button_ok.clicked.connect(self.close)
 
-		self.layout.addWidget(self.cover_box, 0, 0, 8, 2)
-		self.layout.addWidget(self.show_info_box, 0, 2, 8, 10)
+		self.layout.addWidget(self.cover_box, 0, 0, 8, 3)
+		self.layout.addWidget(self.show_info_box, 0, 3, 8, 9)
 		self.layout.addWidget(self.button_box, 9, 0, 1, 12)
 		self.layout.addWidget(self.episodes_table.episode_table, 10, 0, 8, 12)
 		self.layout.addWidget(self.button_ok, 18, 11, 1, 1)
@@ -132,7 +132,6 @@ class OpenShowWindow(QWidget):
 
 		info_box.setLayout(info_box.layout)
 
-		#self.show_info_box.layout.addWidget(image_box, 0, 0)
 		self.show_info_box.layout.addWidget(info_box)
 		self.show_info_box.setLayout(self.show_info_box.layout)
 		

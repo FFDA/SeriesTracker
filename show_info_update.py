@@ -533,25 +533,25 @@ class UpdateShowInfo(QDialog):
 			
 		episode_run_time = self.imdb.get_title(first_episode_imdb_id)
 		
-		if show_info_auxiliary['titleType'] == 'tvSeries':
-			# This if statement tries to get running_time for "normal" TV series.			
-			if "runningTimeInMinutes" in show_info_auxiliary:
-				return show_info_auxiliary["runningTimeInMinutes"]
-			elif "runningTimeInMinutes" in episode_run_time['base']:
-				return episode_run_time['base']["runningTimeInMinutes"]
-			else:
-				return 0
+		# if show_info_auxiliary['titleType'] == 'tvSeries':
+			# # This if statement tries to get running_time for "normal" TV series.			
+			# if "runningTimeInMinutes" in show_info_auxiliary:
+				# return show_info_auxiliary["runningTimeInMinutes"]
+			# elif "runningTimeInMinutes" in episode_run_time['base']:
+				# return episode_run_time['base']["runningTimeInMinutes"]
+			# else:
+				# return 0
 		
+		# else:
+		# This if statement tries to get running_time for "mini" TV Series			
+		if "runningTimeInMinutes" in episode_run_time['base']:
+			# This if tries to retrieve running_time from one of the episodes of the show.
+			return episode_run_time['base']["runningTimeInMinutes"]
+		elif "runningTimeInMinutes" in show_info_auxiliary:
+			# This one calculates episode runtime bu getting running time of all episode and dividing it by episode count
+			full_run_time = show_info_auxiliary["runningTimeInMinutes"]
+			episode_count = show_info_auxiliary["numberOfEpisodes"]
+			return full_run_time / episode_count
 		else:
-			# This if statement tries to get running_time for "mini" TV Series			
-			if "runningTimeInMinutes" in episode_run_time['base']:
-				# This if tries to retrieve running_time from one of the episodes of the show.
-				return episode_run_time['base']["runningTimeInMinutes"]
-			elif "runningTimeInMinutes" in show_info_auxiliary:
-				# This one calculates episode runtime bu getting running time of all episode and dividing it by episode count
-				full_run_time = show_info_auxiliary["runningTimeInMinutes"]
-				episode_count = show_info_auxiliary["numberOfEpisodes"]
-				return full_run_time / episode_count
-			else:
-				# If everything fails it running time will be set as 0
-				return 0
+			# If everything fails it running time will be set as 0
+			return 0
