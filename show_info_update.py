@@ -211,9 +211,9 @@ class UpdateSingleSeason(QDialog):
 						
 						# Setting updated episode counter +1 to print how many episodes where updated.
 						updated_episode_count += 1
-						self.info_box.append("Updated episode {episode_seasonal_id}: , '{}' => '{}' ".format(episode_seasonal_id = fetched_episode_seasonal_id))
+						self.info_box.append("Updated episode {episode_seasonal_id}:".format(episode_seasonal_id = fetched_episode_seasonal_id))
 						self.info_box.append("		Title: '{old_episode_title}' => '{new_episode_title}'".format(old_episode_title = current_episode_title, new_episode_title = fetched_episode_title))
-						self.info_box.append("		Air Date: '{old_air_date}' => '{new_air_date}'".format(old_air_date = current_air_date, new_air_date = fetched_air_date))
+						self.info_box.append("		Air Date: '{old_air_date}' => '{new_air_date}'".format(old_air_date = current_episode_air_date, new_air_date = fetched_episode_air_date))
 				
 				# THIS PART DEALS WHITH EXISTING EPISODES FORM UNKNONW SEASON!
 				# The only difference between this and episode check above is that this one does not check for difference in seaosns, while still trying to add one.

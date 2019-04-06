@@ -9,7 +9,7 @@ from functools import partial
 # Importing PyQt5 stuff
 from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
 from PyQt5.QtSql import QSqlQuery
-from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QDialog, QShortcut
+from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QDialog, QShortcut, QMenu
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
 from PyQt5.QtNetwork import QNetworkInterface
 
@@ -27,6 +27,7 @@ class mainWindow(QMainWindow):
 		self.initUI()	
 
 	def initUI(self):
+		# Checks if there is a settings file.
 		if settings.contains("width") == False:
 			init_settings()
 		
@@ -45,7 +46,15 @@ class TabWidget(QWidget):
 	def __init__(self, parent):
 		super(QWidget, self).__init__(parent)
 		# Initializeing layout for the widget of the main Window?
-		self.layout = QVBoxLayout(self)
+		self.layout = QGridLayout(self)
+		
+		# Setting up Tools menu
+		#button_tools_menu = QMenu()
+		#button_tools_menu.addAction("Backup", self.open_backup_window)
+		button_tools = QPushButton("Tools")
+		#button_tools.setMenu(button_tools_menu)
+		button_tools.setFocusPolicy(Qt.NoFocus)
+		button_tools.clicked.connect(self.open_backup_window)
 		
 		# Initializing tab screen by setting QTabWidget and than adding tabs with QWidget as a main function.
 		self.tabs = QTabWidget()
@@ -64,7 +73,8 @@ class TabWidget(QWidget):
 		self.tab2UI()
 
 		# Adding tabs to the widget
-		self.layout.addWidget(self.tabs)
+		self.layout.addWidget(button_tools, 0, 11, 1, 1)
+		self.layout.addWidget(self.tabs, 0, 0, 15, 12)
 		self.setLayout(self.layout)
 		
 	# Defining first tab UI.
@@ -135,7 +145,9 @@ class TabWidget(QWidget):
 	def set_focus_on_search(self):
 		# Sets focus on search field in "Shows" tab
 		self.shows_table.filter_box.setFocus() # Auto focuses on Filter box every time user clicks on Shows tab.
-		
+	
+	def open_backup_window(self):
+		print("pagavau")		
 
 class CreateEpisodesTable:
 
