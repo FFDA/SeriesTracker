@@ -2,7 +2,7 @@
 
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 from PyQt5.QtWidgets import QFileDialog
-from PyQt5.QtCore import QSettings
+from PyQt5.QtCore import QSettings, QStandardPaths
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
 
@@ -11,7 +11,8 @@ class DatabaseConnection():
 	def check(self):
 	# Checks if there is a path to database. If not it will ask user to choose one.
 		if settings.value("DB_path") == None:
-			db_path = QFileDialog().getExistingDirectory(self, "Select database location")
+			home_location = QStandardPaths.standardLocations(QStandardPaths.HomeLocation)[0]
+			db_path = QFileDialog().getExistingDirectory(self, "Select database location", home_location)
 			f_db_path = db_path + "/shows.db"
 			settings.setValue("DB_path", f_db_path)
 	

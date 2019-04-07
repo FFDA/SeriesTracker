@@ -17,6 +17,7 @@ from database import *
 from misc import *
 from show_info import *
 from add_show import *
+from tools import *
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
 
@@ -49,12 +50,12 @@ class TabWidget(QWidget):
 		self.layout = QGridLayout(self)
 		
 		# Setting up Tools menu
-		#button_tools_menu = QMenu()
-		#button_tools_menu.addAction("Backup", self.open_backup_window)
+		button_tools_menu = QMenu()
+		button_tools_menu.addAction("Backup", self.open_backup_window)
 		button_tools = QPushButton("Tools")
-		#button_tools.setMenu(button_tools_menu)
+		button_tools.setMenu(button_tools_menu)
 		button_tools.setFocusPolicy(Qt.NoFocus)
-		button_tools.clicked.connect(self.open_backup_window)
+		button_tools.setFixedHeight(25)
 		
 		# Initializing tab screen by setting QTabWidget and than adding tabs with QWidget as a main function.
 		self.tabs = QTabWidget()
@@ -73,8 +74,8 @@ class TabWidget(QWidget):
 		self.tab2UI()
 
 		# Adding tabs to the widget
-		self.layout.addWidget(button_tools, 0, 11, 1, 1)
 		self.layout.addWidget(self.tabs, 0, 0, 15, 12)
+		self.layout.addWidget(button_tools, 0, 11, 1, 1)
 		self.setLayout(self.layout)
 		
 	# Defining first tab UI.
@@ -147,8 +148,9 @@ class TabWidget(QWidget):
 		self.shows_table.filter_box.setFocus() # Auto focuses on Filter box every time user clicks on Shows tab.
 	
 	def open_backup_window(self):
-		print("pagavau")		
-
+		self.backup_window = BackupWindow()
+		self.backup_window.exec_()
+		
 class CreateEpisodesTable:
 
 	# Variable with current date for to compare episode's air_date later
