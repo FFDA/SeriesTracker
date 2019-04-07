@@ -255,7 +255,7 @@ class UpdateSingleSeason(QDialog):
 				sql_insert_episode.bindValue(":episode_seasonal_id", fetched_episode_seasonal_id) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode_seasonal_id will make sql_query to fail.
 				sql_insert_episode.bindValue(":episode_year", fetched_episode_year) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode year will make sql_query to fail.
 				sql_insert_episode.bindValue(":episode_title", fetched_episode_title) # This substitutions is provided by Qt5 and is needed, becauase otherwise titles with quotes fill fail to be inserted into database.
-				sql_insert_episode.bindValue(":episode_air_date", fetched_episode_air_date) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty air_date will make sql_query to fail.					
+				sql_insert_episode.bindValue(":air_date", fetched_episode_air_date) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty air_date will make sql_query to fail.					
 				sql_insert_episode.exec_()
 				
 				added_episode_count += 1
@@ -495,7 +495,7 @@ class UpdateShowInfo(QDialog):
 			# This if statament checks season count and if it changed season count will be updated.
 			sql_update_season = QSqlQuery("UPDATE shows SET seasons = {seasons} WHERE IMDB_ID = '{show_id}'".format(seasons = fetched_seasons, show_id = IMDB_id))
 			sql_update_season.exec_()
-			self.info_box.append("Updated season count from {old_season_count} to {new_season_count}. You should update show's seasons next".format(old_season_count = current_seasons, new_season_count = fetched_season_count))
+			self.info_box.append("Updated season count from {old_season_count} to {new_season_count}. You should update show's seasons next".format(old_season_count = current_seasons, new_season_count = fetched_seasons))
 			something_updated_trigger = 1
 			
 		if current_running_time != fetched_running_time:
