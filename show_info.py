@@ -356,7 +356,7 @@ class OpenShowWindow(QWidget):
 			result = self.open_update_single_season_window.exec_()
 			
 			if result == QDialog.Accepted:
-				self.refill_episode_table()
+				self.episodes_table.refill_episode_table()
 			
 	def open_update_show_info(self):
 		if has_internet_connection() == False:
