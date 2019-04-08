@@ -93,6 +93,7 @@ class TabWidget(QWidget):
 		self.latest_episodes.create_table()
 		self.latest_episodes.fill_episode_table()
 		
+		
 		# Setting up Next Episodes table
 		self.next_episodes = CreateUpcomingEpisodesTable()
 		self.next_episodes.label_text = "Upcoming Episodes"
@@ -211,11 +212,12 @@ class CreateEpisodesTable:
 			episode = QSqlQuery(self.sql_filter_episodes % (selected.value("IMDB_id"), self.current_year + "-" + self.current_month_day))
 			episode.last()
 			self.insert_table_row(row_count, episode, selected.value("IMDB_id"), selected.value("title"))
-
+			
 			row_count += 1
-		
+	
 		self.episode_table.sortByColumn(1, Qt.AscendingOrder) #Orders table after filling it
 		self.episode_table.doubleClicked.connect(self.open_show) # Enables double click on
+
 
 	def insert_table_row(self, row_count, episode, IMDB_id, title):
 
