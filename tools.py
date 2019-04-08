@@ -2,6 +2,7 @@
 
 import datetime
 import tarfile
+import re
 from os import listdir
 
 from PyQt5.QtCore import QSettings, Qt, QStandardPaths, QDir
@@ -21,6 +22,7 @@ class BackupWindow(QDialog):
 	def initUI(self):
 		self.resize(600, 200)
 		self.setModal(True)
+		self.setWindowTitle("Create Backup")
 		self.layout = QGridLayout()
 		
 		destination_label = QLabel("Choose backup destination")
@@ -72,9 +74,12 @@ class BackupWindow(QDialog):
 		# Appends file name that consists from program's name, date and extension.
 		location_home = QStandardPaths.standardLocations(QStandardPaths.HomeLocation)[0]
 		location = QFileDialog.getExistingDirectory(self, "Choose directory", location_home)
-		backup_filename = "SeriesTracker_" + datetime.datetime.today().strftime("%Y-%m-%d_%H-%M") + ".tar.gz"
-		self.destination_line_edit.setText(location + QDir.separator() + backup_filename)
-		self.enable_backup_botton()
+		if location != "":
+			backup_filename = "SeriesTracker_" + datetime.datetime.today().strftime("%Y-%m-%d_%H-%M") + ".tar.gz"
+			self.destination_line_edit.setText(location + QDir.separator() + backup_filename)
+			self.enable_backup_botton()
+		else:
+			return
 	
 	def enable_backup_botton(self):
 		# This function is executed everytime a state of checkbox is changed and to check if at least one of them is checked.
@@ -114,3 +119,83 @@ class BackupWindow(QDialog):
 		self.progress.setValue(5)
 		
 		backup_file.close() # Closes backup archive
+
+class RestoreWindow(QDialog):
+	# Opens window that allows user to restore database, covers and settings file from backup file.
+	def __init__(self):
+		super(RestoreWindow, self).__init__()
+		self.initUI()
+		
+	def initUI(self):
+		self.resize(600, 200)
+		self.setModal(True)
+		self.setWindowTitle("Backup Restore")
+		self.layout = QGridLayout()
+		
+		destination_label = QLabel("Choose restore file")
+		destination_label.setAlignment(Qt.AlignCenter)
+		self.destination_line_edit = QLineEdit()
+		self.destination_line_edit.setReadOnly(True)
+		self.destination_choose_button = QPushButton("Choose")
+		self.destination_choose_button.clicked.connect(self.choose_restore_file)
+		
+		self.progress = QProgressBar()
+		self.progress.setMinimum(0)
+		
+		self.button_restore = QPushButton("Restore")
+		self.button_restore.setEnabled(False)
+		self.button_restore.clicked.connect(self.restore)
+		self.button_close = QPushButton("Close")
+		self.button_close.clicked.connect(self.accept)
+		
+		self.layout.addWidget(destination_label, 0, 0, 1, 8)
+		self.layout.addWidget(self.destination_line_edit, 1, 0, 1, 7)
+		self.layout.addWidget(self.destination_choose_button, 1, 7, 1, 1)
+		self.layout.addWidget(self.progress, 2, 0, 1, 8)
+		self.layout.addWidget(self.button_restore, 3, 6, 1, 1)
+		self.layout.addWidget(self.button_close, 3, 7, 1, 1)
+		
+		self.setLayout(self.layout)
+		self.show()
+		
+		print()
+
+	def choose_restore_file(self):
+		# Display a dialog box to user to choose a location where backup file will be saved.
+		# filters files to show files with tar.gz extension.
+		location_home = QStandardPaths.standardLocations(QStandardPaths.HomeLocation)[0]
+		backup_file = QFileDialog.getOpenFileName(self, "Backup file", location_home, "Backup (SeriesTracker*.tar.gz)")[0]
+		if backup_file != "":
+			self.destination_line_edit.setText(backup_file)
+			self.button_restore.setEnabled(True)
+		else:
+			return
+
+	def restore(self):
+		# Restores data from back by going though backup file and checking whats inside and restoring it to appropriate location.
+		cover_re_match = re.compile("tt([\d]+\.jpg)")
+		progress_count = 0
+		
+		backup_file = tarfile.open(self.destination_line_edit.text(), "r:gz") # Opens chosen backup file
+		self.progress.setMaximum(len(backup_file.getnames()) + 2) # Set progress_bar value to the item count of backup file + 2
+		
+		progress_count += 1
+		self.progress.setValue(progress_count)
+		
+		for item in backup_file.getnames():
+			if cover_re_match.search(item) != None:
+				# Extracts covers
+				backup_file.extract(item, QStandardPaths.standardLocations(QStandardPaths.GenericDataLocation)[0] + "/SeriesTracker/")
+			elif item == "SeriesTracker.conf":
+				# Extracts settings
+				backup_file.extract(item, QStandardPaths.standardLocations(QStandardPaths.ConfigLocation)[0] + QDir.separator() + "SeriesTracker" + QDir.separator())
+			elif item == "shows.db":
+				# Extracts database
+				backup_file.extract(item, re.sub("shows.db", "", settings.value("DB_path")))
+			
+			progress_count += 1
+			self.progress.setValue(progress_count)
+
+		backup_file.close()
+		progress_count += 1
+		self.progress.setValue(progress_count)

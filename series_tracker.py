@@ -2,7 +2,6 @@
 
 #Imporing Python3 stuff
 import sys
-import datetime
 import sqlite3
 from functools import partial
 
@@ -52,6 +51,7 @@ class TabWidget(QWidget):
 		# Setting up Tools menu
 		button_tools_menu = QMenu()
 		button_tools_menu.addAction("Backup", self.open_backup_window)
+		button_tools_menu.addAction("Restore", self.open_restore_window)
 		button_tools = QPushButton("Tools")
 		button_tools.setMenu(button_tools_menu)
 		button_tools.setFocusPolicy(Qt.NoFocus)
@@ -151,6 +151,10 @@ class TabWidget(QWidget):
 	def open_backup_window(self):
 		self.backup_window = BackupWindow()
 		self.backup_window.exec_()
+		
+	def open_restore_window(self):
+		self.restore_window = RestoreWindow()
+		self.restore_window.exec_()
 		
 class CreateEpisodesTable:
 
