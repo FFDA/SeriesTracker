@@ -327,16 +327,16 @@ class AddShow(QDialog):
 
 	def get_running_time(self, fetched_show_info_detailed, show_info_auxiliary):
 		# Moved code that retrieves running time to this function, because there are a lot of nuance with it on IMDB side.
-		first_episode_imdb_id = check_if_input_contains_IMDB_id(fetched_show_info_detailed['episodes'][0]['id']) # This is needed because IMDB shows different running time for tvMiniSeries (full run) and tvSeries (just for an episode).
+		first_episode_imdb_id = check_if_input_contains_IMDB_id(fetched_show_info_detailed['episodes'][1]['id']) # This is needed because IMDB shows different running time for tvMiniSeries (full run) and tvSeries (just for an episode).
 			
 		episode_run_time = self.imdb.get_title(first_episode_imdb_id)
 		
 		if show_info_auxiliary['titleType'] == 'tvSeries':
 			# This if statement tries to get running_time for "normal" TV series.			
-			if "runningTimeInMinutes" in show_info_auxiliary:
-				return show_info_auxiliary["runningTimeInMinutes"]
-			elif "runningTimeInMinutes" in episode_run_time['base']:
+			if "runningTimeInMinutes" in episode_run_time['base'] and episode_run_time['base']["runningTimeInMinutes"] <= 60:
 				return episode_run_time['base']["runningTimeInMinutes"]
+			elif "runningTimeInMinutes" in show_info_auxiliary:
+				return show_info_auxiliary["runningTimeInMinutes"]
 			else:
 				return 0
 		
@@ -353,4 +353,3 @@ class AddShow(QDialog):
 			else:
 				# If everything fails it running time will be set as 0
 				return 0
-

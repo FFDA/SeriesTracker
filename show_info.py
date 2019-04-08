@@ -165,7 +165,12 @@ class OpenShowWindow(QWidget):
 	def create_cover_box(self):
 		# Creates cover box. And add poster if there is one downloaded. If not shows a button to download a poster.
 		
-		if QPixmap().load(settings.value("coverDir") + self.IMDB_id + ".jpg") == True:
+		
+		if self.image == "":
+			self.cover_box.cover = QLabel("There is no cover to downlaod") # Poster placeholder
+			self.cover_box.cover.setAlignment(Qt.AlignCenter)
+			self.cover_box.layout.addWidget(self.cover_box.cover)
+		elif QPixmap().load(settings.value("coverDir") + self.IMDB_id + ".jpg") == True:
 			# If there is a cover in .local/share/SeriesTracker/covers folder it is loaded.
 			self.cover_box.cover = QLabel() # Poster placeholder
 			self.cover_box.cover.setAlignment(Qt.AlignCenter)
