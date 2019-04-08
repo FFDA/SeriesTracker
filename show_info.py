@@ -458,7 +458,6 @@ class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
 			
 			if episode_button == "Watched":
 				episode_state = "1"
-				#button_text = self.not_watched_button_text		
 				checkbox_state = Qt.Checked
 				episode_watched_color = QColor(200, 230, 255)
 				mark_button_color = QColor(160, 161, 162)
@@ -467,7 +466,6 @@ class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
 
 			mark_episode = QSqlQuery("UPDATE %s SET episode_watched = %s WHERE episode_IMDB_id = '%s'" % (self.IMDB_id, episode_state, episode_IMDB_id))
 			mark_episode.exec_()
-			#self.table_model.setData(pos, button_text) # Changes button's text.
 			self.table_model.item(pos.row(), 4).setForeground(mark_button_color)
 			self.table_model.item(pos.row(), 0).setCheckState(checkbox_state) # Changes state of checkbox
 

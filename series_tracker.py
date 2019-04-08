@@ -566,7 +566,6 @@ class CreateShowEpisodeTable(CreateEpisodesTable):
 		self.episode_table.setColumnWidth(0, 30)
 		self.episode_table.setColumnWidth(1, 100)
 		self.episode_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Stretch)
-	
 		self.episode_table.clicked.connect(self.mark_episode) # Detects clicks on the table
 
 	def fill_episode_table(self):
@@ -645,6 +644,7 @@ class CreateShowEpisodeTable(CreateEpisodesTable):
 	def refill_episode_table(self):
 		self.table_model.setRowCount(0)
 		self.fill_episode_table()
+		self.episode_table.sortByColumn(1, Qt.AscendingOrder) # Sorts table in ascending order by seasonal ID
 
 
 if __name__ == "__main__":
