@@ -156,7 +156,8 @@ class CreateEpisodesTable:
 
 	# Variable with current date for to compare episode's air_date later
 	current_year = datetime.datetime.today().strftime("%Y")
-	current_month_day = datetime.datetime.today().strftime("%m-%d")
+	current_month = datetime.datetime.today().strftime("%m")
+	current_day = datetime.datetime.today().strftime("%d")
 	
 	def __init__(self):
 		self.sql_select_shows = ""
@@ -209,7 +210,7 @@ class CreateEpisodesTable:
 		while selected.next():
 
 			# Selecting all episodes from show in the watchlist that has air_date longer than 4 digists and which has air_date beforte current date. Ordering results in descending order.
-			episode = QSqlQuery(self.sql_filter_episodes % (selected.value("IMDB_id"), self.current_year + "-" + self.current_month_day))
+			episode = QSqlQuery(self.sql_filter_episodes % (selected.value("IMDB_id"), self.current_year + "-" + self.current_month + "-" + self.current_day))
 			episode.last()
 			self.insert_table_row(row_count, episode, selected.value("IMDB_id"), selected.value("title"))
 			
@@ -236,16 +237,12 @@ class CreateEpisodesTable:
 			# Setting background color for current row, checkbox's checkmark and setting "mark_watched" button status depending if episode is watched or not.
 			if episode_state == 1:
 				show_watched.setCheckState(Qt.Checked)
-				show_watched_color = QColor(200, 230, 255)
 				mark_watched_button.setEnabled(False)
 			else:
-				show_watched.setCheckState(Qt.Unchecked)
-				show_watched_color = QColor(200, 255, 170)
-	
-			# Setting background color to red if current_date is smaller than air_date of the episode.
-			if episode.value("air_date") > self.current_year + "-" + self.current_month_day or episode.value("air_date") == None or len(episode.value("air_date")) < 8:
-
-				show_watched_color = QColor(255, 170, 175)
+				show_watched.setCheckState(Qt.Unchecked)	
+			
+			# Settings row's color depending on if episode is wathced and air_dare compared to todey()
+			show_watched_color = row_backgound_color(episode.value("air_date"), episode_state)
 	
 			# Setting different values to different culumns of the row for the query result.
 			self.table_model.setItem(row_count, 0, show_watched)
@@ -289,7 +286,7 @@ class CreateUpcomingEpisodesTable(CreateEpisodesTable):
 		while selected.next():
 
 			# Selecting all episodes from show in the watchlist that has air_date longer than 4 digists and which has air_date beforte current date. Ordering results in descending order.
-			episode = QSqlQuery(self.sql_filter_episodes % (selected.value("IMDB_id"), self.current_year + "-" + self.current_month_day))
+			episode = QSqlQuery(self.sql_filter_episodes % (selected.value("IMDB_id"), self.current_year + "-" + self.current_month + "-" + self.current_day))
 			if episode.first() == True:
 				self.insert_table_row(row_count, episode, selected.value("IMDB_id"), selected.value("title"))
 				row_count += 1
@@ -321,15 +318,12 @@ class CreateUpcomingEpisodesTable(CreateEpisodesTable):
 		# Setting background color for current row, checkbox's checkmark and setting "mark_watched" button status depending if episode is watched or not.
 		if episode_state == 1:
 			show_watched.setCheckState(Qt.Checked)
-			show_watched_color = QColor(200, 230, 255)
 			mark_watched_button.setEnabled(False)
 		else:
 			show_watched.setCheckState(Qt.Unchecked)
-			show_watched_color = QColor(200, 255, 170)
- 
-		# Setting background color to red if current_date is smaller than air_date of the episode.
-		if episode.value("air_date") > self.current_year + "-" + self.current_month_day or episode.value("air_date") == None or len(episode.value("air_date")) < 8:
-			show_watched_color = QColor(255, 170, 175)
+
+		# Settings row's color depending on if episode is wathced and air_dare compared to todey()
+		show_watched_color = row_backgound_color(episode.value("air_date"), episode_state)
 
 		# Setting different values to different culumns of the row for the query result.
 		self.table_model.setItem(row_count, 0, show_watched)
@@ -601,17 +595,13 @@ class CreateShowEpisodeTable(CreateEpisodesTable):
 		# Setting background color for current row, checkbox's checkmark and setting "mark_watched" button status depending if episode is watched or not.
 		if episode_state == 1:
 			show_watched.setCheckState(Qt.Checked)
-			show_watched_color = QColor(200, 230, 255)
 			mark_button = QStandardItem("Not Watched")
 		else:
 			show_watched.setCheckState(Qt.Unchecked)
-			show_watched_color = QColor(200, 255, 170)
 			mark_button = QStandardItem("Watched")
 
-		# Setting background color to red if current_date is smaller than air_date of the episode.
-		if episode.value("air_date") > self.current_year + "-" + self.current_month_day or episode.value("air_date") == None or len(episode.value("air_date")) < 8:
-
-			show_watched_color = QColor(255, 170, 175)
+		# Settings row's color depending on if episode is wathced and air_dare compared to todey()
+		show_watched_color = row_backgound_color(episode.value("air_date"), episode_state)
 
 		# Setting different values to different culumns of the row for the query result.
 		self.table_model.setItem(row_count, 0, show_watched)

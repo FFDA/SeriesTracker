@@ -3,7 +3,9 @@
 from PyQt5.QtWidgets import QDesktopWidget, QDialog, QLabel, QPushButton, QVBoxLayout
 from PyQt5.QtCore import QStandardPaths, QDir, QSettings
 from PyQt5.QtNetwork import QNetworkInterface
+from PyQt5.QtGui import QColor
 import re
+import datetime
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
 
@@ -60,6 +62,40 @@ def has_internet_connection():
 	else:
 		return False
 
+def row_backgound_color(air_date, episode_state):
+	# Variable with current date for to compare episode's air_date later
+	current_year = datetime.datetime.today().strftime("%Y")
+	current_month = datetime.datetime.today().strftime("%m")
+	current_day = datetime.datetime.today().strftime("%d")
+	red = QColor(255, 170, 175)
+	blue = QColor(200, 230, 255)
+	green = QColor(200, 255, 170)
+		
+	
+	if episode_state == 0:
+		
+		if len(air_date) <= 4:
+			# Checks episodes, that has only year as air_date
+			if air_date >= current_year or air_date == "":
+				return red
+			else:
+				return green
+		elif len(air_date) <= 7:
+			# Checks episodes, that has only year and month as air_date
+			if air_date > current_year + "-" + current_month:
+				return red
+			else:
+				return green
+		elif len(air_date) > 8:
+			# Checks episodes, that has full air_date.
+			if air_date <= current_year + "-" + current_month + "-" + current_day:
+				return green
+			else:
+				return red
+	else:
+		# If episode checked as watched it is always has blue background
+		return blue
+			
 class CheckInternet(QDialog):
 	# Prompts user with a message that is passed to this class.
 	# Has only one button "OK"

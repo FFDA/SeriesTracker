@@ -426,19 +426,15 @@ class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
 		# Setting background color for current row, checkbox's checkmark and setting "mark_watched" button status depending if episode is watched or not.
 		if episode_state == 1:
 			show_watched.setCheckState(Qt.Checked)
-			show_watched_color = QColor(200, 230, 255)
 			mark_button = QStandardItem("Watched")
 			mark_button_color = QColor(160, 161, 162)
 		else:
 			show_watched.setCheckState(Qt.Unchecked)
-			show_watched_color = QColor(200, 255, 170)
 			mark_button = QStandardItem("Watched")
 			mark_button_color = QColor(0, 0, 0)
 
-		# Setting background color to red if current_date is smaller than air_date of the episode.
-		if episode.value("air_date") > self.current_year + "-" + self.current_month_day or episode.value("air_date") == None or len(episode.value("air_date")) < 8:
-
-			show_watched_color = QColor(255, 170, 175)
+		# Settings row's color depending on if episode is wathced and air_dare compared to todey()
+		show_watched_color = row_backgound_color(episode.value("air_date"), episode_state)
 
 		# Setting different values to different culumns of the row for the query result.
 		self.table_model.setItem(row_count, 0, show_watched)
