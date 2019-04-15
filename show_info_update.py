@@ -212,8 +212,10 @@ class UpdateSingleSeason(QDialog):
 						# Setting updated episode counter +1 to print how many episodes where updated.
 						updated_episode_count += 1
 						self.info_box.append("Updated episode {episode_seasonal_id}:".format(episode_seasonal_id = fetched_episode_seasonal_id))
-						self.info_box.append("		Title: '{old_episode_title}' => '{new_episode_title}'".format(old_episode_title = current_episode_title, new_episode_title = fetched_episode_title))
-						self.info_box.append("		Air Date: '{old_air_date}' => '{new_air_date}'".format(old_air_date = current_episode_air_date, new_air_date = fetched_episode_air_date))
+						if current_episode_title != fetched_episode_title:
+							self.info_box.append("		Title: '{old_episode_title}' => '{new_episode_title}'".format(old_episode_title = current_episode_title, new_episode_title = fetched_episode_title))
+						if current_episode_air_date != fetched_episode_air_date:
+							self.info_box.append("		Air Date: '{old_air_date}' => '{new_air_date}'".format(old_air_date = current_episode_air_date, new_air_date = fetched_episode_air_date))
 				
 				# THIS PART DEALS WHITH EXISTING EPISODES FORM UNKNONW SEASON!
 				# The only difference between this and episode check above is that this one does not check for difference in seaosns, while still trying to add one.
@@ -236,9 +238,11 @@ class UpdateSingleSeason(QDialog):
 						
 						# Setting updated episode counter +1 to print how many episodes where updated.
 						updated_episode_count += 1
-						self.info_box.append("Updated episode {episode_seasonal_id}: , '{}' => '{}' ".format(episode_seasonal_id = fetched_episode_seasonal_id))
-						self.info_box.append("		Title: '{old_episode_title}' => '{new_episode_title}'".format(old_episode_title = current_episode_title, new_episode_title = fetched_episode_title))
-						self.info_box.append("		Air Date: '{old_air_date}' => '{new_air_date}'".format(old_air_date = current_air_date, new_air_date = fetched_air_date))
+						self.info_box.append("Updated episode {episode_seasonal_id}:".format(episode_seasonal_id = fetched_episode_seasonal_id))
+						if current_episode_title != fetched_episode_title:
+							self.info_box.append("		Title: '{old_episode_title}' => '{new_episode_title}'".format(old_episode_title = current_episode_title, new_episode_title = fetched_episode_title))
+						if current_episode_air_date != fetched_episode_air_date:
+							self.info_box.append("		Air Date: '{old_air_date}' => '{new_air_date}'".format(old_air_date = current_episode_air_date, new_air_date = fetched_episode_air_date))
 
 			# If episode does not exist in the database it is inserted in as a new record. The same steps are taken as in add new shows episodes in the add_show.py file.
 			# This part should work the same for the Normal and Unknown seasons. 
@@ -287,7 +291,7 @@ class UpdateSingleSeason(QDialog):
 class UpdateThreeSeasons(UpdateSingleSeason):
 	
 	def __init__(self, IMDB_id, seasons, unknown_season, title):
-		super(UpdateSingleSeason, self).__init__()
+		super(UpdateThreeSeasons, self).__init__()
 		self.IMDB_id = IMDB_id
 		self.seasons = seasons
 		self.unknown_season = unknown_season
@@ -510,7 +514,7 @@ class UpdateShowInfo(QDialog):
 			self.info_box.append("You should update shows seasons")
 			something_updated_trigger = 1
 		elif current_unknown_season != fetched_unknown_season and unknown_season_episode_exists == 0:
-			nknown_season_toggle = QSqlQuery("UPDATE shows SET unknown_season = 1 WHERE IMDB_id = '%s'" % self.IMDB_id)
+			unknown_season_toggle = QSqlQuery("UPDATE shows SET unknown_season = 1 WHERE IMDB_id = '%s'" % self.IMDB_id)
 			unknown_season_toggle.exec_()
 			self.info_box.append("'Unknown season was added to show's season list.")
 			self.info_box.append("You should update shows seasons")
