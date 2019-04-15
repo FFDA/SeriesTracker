@@ -62,6 +62,13 @@ def has_internet_connection():
 	else:
 		return False
 
+# This small regex function finds and returns a episode_seasonl_id from file name.
+seasonal_id_pattern = re.compile("S\d+E\d+")
+def get_seasonal_id(file_name):
+	if seasonal_id_pattern.search(file_name):
+		return seasonal_id_pattern.search(file_name)[0]
+
+
 def row_backgound_color(air_date, episode_state):
 	# Variable with current date for to compare episode's air_date later
 	current_year = datetime.datetime.today().strftime("%Y")

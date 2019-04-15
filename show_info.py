@@ -5,6 +5,8 @@
 # Python3 imports
 import webbrowser
 from urllib import request
+from os import listdir
+from subprocess import Popen
 
 # PyQt5 imports
 from PyQt5.QtWidgets import QDialog, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QComboBox, QMenu, QDesktopWidget, QSizePolicy
@@ -41,8 +43,18 @@ class OpenShowWindow(QWidget):
 		self.cover_box.layout = QGridLayout()  # Cover box layout
 		
 		self.make_show_info_box()
-		
-		self.episodes_table = CreateShowInfoEpisodeTable(self.IMDB_id) # Initiating episode table
+
+		# Checks if there is a folder with the same name as show title in set directory
+		episode_list = dict() # Default value is empty dictionary to mark that there isn't such folder.
+		if self.title in listdir("/media/Data/Torrents/Serialai/"):
+			episode_list["path"] = "/media/Data/Torrents/Serialai/" + self.title + QDir.separator()
+			# If folder is found. Every seasonal_episode_id that is found is added to dictionary.
+			for file_name in listdir("/media/Data/Torrents/Serialai/" + self.title):
+				episode_seasonal_id = get_seasonal_id(file_name) # This function is in misc.py
+				if episode_seasonal_id!= None:
+					episode_list[episode_seasonal_id] = file_name
+
+		self.episodes_table = CreateShowInfoEpisodeTable(self.IMDB_id, episode_list) # Initiating episode table
 		
 		self.episodes_table.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
 		self.episodes_table.create_table()	
@@ -77,7 +89,6 @@ class OpenShowWindow(QWidget):
 		self.years_aired = show_info.value("years_aired")
 		self.finished_watching = show_info.value("finished_watching")
 		self.unknown_season = show_info.value("unknown_season")	
-
  
 	def make_show_info_box(self):
 		
@@ -164,8 +175,7 @@ class OpenShowWindow(QWidget):
 		
 	def create_cover_box(self):
 		# Creates cover box. And add poster if there is one downloaded. If not shows a button to download a poster.
-		
-		
+				
 		if self.image == "":
 			self.cover_box.cover = QLabel("There is no cover to downlaod") # Poster placeholder
 			self.cover_box.cover.setAlignment(Qt.AlignCenter)
@@ -404,12 +414,47 @@ class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
 	
 	episode_marked = pyqtSignal() # This is a signal that will be emited after episode is marked as watched.
 
-	def __init__(self, IMDB_id):
+	def __init__(self, IMDB_id, episode_list):
 		QObject.__init__(self) # I don't know whats the difference compared to super. I coppied that from pythoncentral.io
 		self.IMDB_id = IMDB_id
 		self.sql_select_shows = ""
 		self.table_column_count = 5
 		self.horizontal_header_labels = ["", "Episode ID", "Air Date", "Episode Title", ""]
+		self.episode_list = episode_list
+
+	def create_table(self):
+
+		self.column_to_hide = 5 # Value holds witch column to hide. This was added just for this table, because this column changes depending if there is play button in the table or not.
+
+		self.table_model = QStandardItemModel()
+
+		# Setting up to add play button if there are folder with episodes.
+		if len(self.episode_list) != 0:
+			self.table_column_count = 6 # Changing column count to add "Play" button.
+			self.horizontal_header_labels = ["", "Episode ID", "Air Date", "Episode Title", "",""]
+			self.column_to_hide = 6 # Hidding last calumn that holds episode_IMDB_id value
+		
+		self.table_model.setColumnCount(self.table_column_count)
+		self.table_model.setHorizontalHeaderLabels(self.horizontal_header_labels)
+		self.table_model.sort(1, Qt.AscendingOrder)		
+		
+		self.fill_episode_table()
+
+		self.episode_table = QTableView()
+		self.episode_table.setModel(self.table_model)
+		self.episode_table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents) # Adjust how much space table takes
+		self.episode_table.setEditTriggers(QAbstractItemView.NoEditTriggers) # Makes table not editable
+		self.episode_table.setSelectionBehavior(QAbstractItemView.SelectRows) # Clicking on cell selects row
+		self.episode_table.verticalHeader().setVisible(False) # Removing vertincal headers for rows (removing numbering)
+		self.episode_table.setSelectionMode(QAbstractItemView.NoSelection) # Makes not able to select cells or rows in table
+		self.episode_table.sortByColumn(1, Qt.AscendingOrder) # Sorts table in ascending order by seasonal ID
+		self.episode_table.hideColumn(self.column_to_hide) # Hidding last calumn that holds episode_IMDB_id value	
+		# self.episode_table.setShowGrid(False) # Removes grid
+		### Setting custom widths for some columns ###
+		self.episode_table.setColumnWidth(0, 30)
+		self.episode_table.setColumnWidth(1, 100)
+		self.episode_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Stretch)
+		self.episode_table.clicked.connect(self.table_clicked) # Detects clicks on the table
 
 	def insert_table_row(self, row_count, episode, IMDB_id):
 
@@ -422,6 +467,16 @@ class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
 		show_watched = QStandardItem()
 		# Making Checkbox not editable
 		show_watched.setFlags(Qt.ItemIsEditable)
+
+		# Setting up "Play" button
+		if len(self.episode_list) != 0:
+			button_play =  QStandardItem("Play")
+
+			if episode.value("episode_seasonal_id") in self.episode_list:
+				button_play_color = QColor(0, 0, 0)
+			else:
+				button_play_color = QColor(160, 161, 162)
+				
 
 		# Setting background color for current row, checkbox's checkmark and setting "mark_watched" button status depending if episode is watched or not.
 		if episode_state == 1:
@@ -445,32 +500,54 @@ class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
 		self.table_model.item(row_count, 2).setBackground(show_watched_color)
 		self.table_model.setItem(row_count, 3, QStandardItem(episode.value("episode_title")))
 		self.table_model.item(row_count, 3).setBackground(show_watched_color)
-		self.table_model.setItem(row_count, 4, mark_button)
-		self.table_model.item(row_count, 4).setTextAlignment(Qt.AlignCenter)
-		self.table_model.item(row_count, 4).setForeground(mark_button_color)
-		self.table_model.setItem(row_count, 5, QStandardItem(episode.value("episode_IMDB_id")))
+		# This part of the row changes, because of the different count of the columns
+		if len(self.episode_list) != 0:
+			# Row is made this way if there is a folder for the episodes.
+			# This adds a "Play" button.
+			self.table_model.setItem(row_count, 4, button_play)
+			self.table_model.item(row_count, 4).setTextAlignment(Qt.AlignCenter)
+			self.table_model.item(row_count, 4).setForeground(button_play_color)
+			self.table_model.setItem(row_count, 5, mark_button)
+			self.table_model.item(row_count, 5).setTextAlignment(Qt.AlignCenter)
+			self.table_model.item(row_count, 5).setForeground(mark_button_color)
+			self.table_model.setItem(row_count, 6, QStandardItem(episode.value("episode_IMDB_id")))
+		else:
+			# Row made this they if there is no folder with show's title.
+			# "Play" button is not add to the row.
+			self.table_model.setItem(row_count, 4, mark_button)
+			self.table_model.item(row_count, 4).setTextAlignment(Qt.AlignCenter)
+			self.table_model.item(row_count, 4).setForeground(mark_button_color)
+			self.table_model.setItem(row_count, 5, QStandardItem(episode.value("episode_IMDB_id")))
 
-	def mark_episode(self, pos):	
+	def table_clicked(self, pos):	
 		# Marks episode when clicked on button-cell.
-		if pos.column() == 4:
-			episode_button = self.table_model.item(pos.row(), pos.column()).text()
-			episode_IMDB_id = self.table_model.item(pos.row(), 5).text()
+		
+		if pos.column() > 3: # If cell that is in column 0 - 3 is clicked does nothing
 			
-			if episode_button == "Watched":
-				episode_state = "1"
-				checkbox_state = Qt.Checked
-				episode_watched_color = QColor(200, 230, 255)
-				mark_button_color = QColor(160, 161, 162)
+			button_text = self.table_model.item(pos.row(), pos.column()).text() # Name of the button
+
+			if button_text == "Play": # If cell with text "Play" clicked
+				episode_seasonal_id = self.table_model.item(pos.row(), 1).text() # Gets episode_seasonl_id from column 1 of the table
+				path_to_episode = self.episode_list["path"] + self.episode_list[episode_seasonal_id])
+				Popen(["mpv", path_to_episode]])
 			else:
-				return
+				episode_IMDB_id = self.table_model.item(pos.row(), self.column_to_hide).text() # Gets episodes_IMDB_ID from hidden column
+					
+				if button_text == "Watched":
+					episode_state = "1"
+					checkbox_state = Qt.Checked
+					episode_watched_color = QColor(200, 230, 255)
+					mark_button_color = QColor(160, 161, 162)
+				else:
+					return
 
-			mark_episode = QSqlQuery("UPDATE %s SET episode_watched = %s WHERE episode_IMDB_id = '%s'" % (self.IMDB_id, episode_state, episode_IMDB_id))
-			mark_episode.exec_()
-			self.table_model.item(pos.row(), 4).setForeground(mark_button_color)
-			self.table_model.item(pos.row(), 0).setCheckState(checkbox_state) # Changes state of checkbox
+				mark_episode = QSqlQuery("UPDATE %s SET episode_watched = %s WHERE episode_IMDB_id = '%s'" % (self.IMDB_id, episode_state, episode_IMDB_id))
+				mark_episode.exec_()
+				self.table_model.item(pos.row(), self.column_to_hide - 1).setForeground(mark_button_color)
+				self.table_model.item(pos.row(), 0).setCheckState(checkbox_state) # Changes state of checkbox
 
-			# Changes background color of the row.
-			for n in range(4):
-				self.table_model.item(pos.row(), n).setBackground(episode_watched_color)
+				# Changes background color of the row.
+				for n in range(4):
+					self.table_model.item(pos.row(), n).setBackground(episode_watched_color)
 
-			self.episode_marked.emit()
+				self.episode_marked.emit()
