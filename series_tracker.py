@@ -90,25 +90,23 @@ class TabWidget(QWidget):
 		
 		# Setting up Latest Episodes table
 		self.latest_episodes = CreateEpisodesTable()
-		self.latest_episodes.episode_table.setMinimumHeight(333)
 		self.latest_episodes.label_text = "Latest Episodes"
 		self.latest_episodes.sql_select_shows = "SELECT * FROM shows WHERE finished_watching = 0"
 		self.latest_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE LENGTH(air_date) > 7 AND air_date < '%s' ORDER BY air_date ASC"
 		self.latest_episodes.create_label()
 		self.latest_episodes.create_table()
 		self.latest_episodes.fill_episode_table()
+		self.latest_episodes.episode_table.setMinimumHeight(333)
 		
 		# Setting up Next Episodes table
 		self.next_episodes = CreateUpcomingEpisodesTable()
-		self.next_episodes.episode_table.setMinimumHeight(333)
 		self.next_episodes.label_text = "Upcoming Episodes"
 		self.next_episodes.sql_select_shows = "SELECT * FROM shows WHERE finished_watching = 0"
 		self.next_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE air_date >= '%s' ORDER BY episode_seasonal_id ASC"
 		self.next_episodes.create_label()
 		self.next_episodes.create_table()
 		self.next_episodes.fill_episode_table()
-
-		#self.latest_episodes.episode_table.setMinimumHeight(500)
+		self.next_episodes.episode_table.setMinimumHeight(333)
 		
 		# Adding label to the tab1 layout
 		self.tab1.layout.addWidget(self.latest_episodes.episode_table_label)
@@ -117,6 +115,7 @@ class TabWidget(QWidget):
 		self.tab1.layout.addWidget(self.next_episodes.episode_table_label)
 		self.tab1.layout.addWidget(self.next_episodes.episode_table)
 		# Adding setting tab1 laytout
+		self.tab1.setLayout(self.tab1.layout)
 
 	def tab2UI(self):
 		
