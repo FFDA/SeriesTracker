@@ -86,10 +86,11 @@ class TabWidget(QWidget):
 	def tab1UI(self):
 		
 		# Setting tab1 layout to vertical
-		self.tab1.layout = QVBoxLayout()
+		self.tab1.layout = QGridLayout()
 		
 		# Setting up Latest Episodes table
 		self.latest_episodes = CreateEpisodesTable()
+		self.latest_episodes.episode_table.setMinimumHeight(333)
 		self.latest_episodes.label_text = "Latest Episodes"
 		self.latest_episodes.sql_select_shows = "SELECT * FROM shows WHERE finished_watching = 0"
 		self.latest_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE LENGTH(air_date) > 7 AND air_date < '%s' ORDER BY air_date ASC"
@@ -97,15 +98,17 @@ class TabWidget(QWidget):
 		self.latest_episodes.create_table()
 		self.latest_episodes.fill_episode_table()
 		
-		
 		# Setting up Next Episodes table
 		self.next_episodes = CreateUpcomingEpisodesTable()
+		self.next_episodes.episode_table.setMinimumHeight(333)
 		self.next_episodes.label_text = "Upcoming Episodes"
 		self.next_episodes.sql_select_shows = "SELECT * FROM shows WHERE finished_watching = 0"
 		self.next_episodes.sql_filter_episodes = "SELECT * FROM %s WHERE air_date >= '%s' ORDER BY episode_seasonal_id ASC"
 		self.next_episodes.create_label()
 		self.next_episodes.create_table()
 		self.next_episodes.fill_episode_table()
+
+		#self.latest_episodes.episode_table.setMinimumHeight(500)
 		
 		# Adding label to the tab1 layout
 		self.tab1.layout.addWidget(self.latest_episodes.episode_table_label)
@@ -114,8 +117,6 @@ class TabWidget(QWidget):
 		self.tab1.layout.addWidget(self.next_episodes.episode_table_label)
 		self.tab1.layout.addWidget(self.next_episodes.episode_table)
 		# Adding setting tab1 laytout
-		self.tab1.setLayout(self.tab1.layout)
-
 
 	def tab2UI(self):
 		
@@ -213,6 +214,7 @@ class CreateEpisodesTable:
 		self.episode_table.setColumnWidth(0, 30)
 		self.episode_table.setColumnWidth(1, 340)
 		self.episode_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
+		#self.episode_table.verticalHeader().setSectionResizeMode(QHeaderView.Stretch) # This line stretches every line verticaly a bit to make table take 100% of space, but it looks funky 
 
 	# Marks episode as watched and repopulates table with updated data.
 	def mark_watched(self, IMDB_id, episode_IMDB_id):
