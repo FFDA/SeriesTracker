@@ -6,7 +6,7 @@ import re
 from os import listdir
 
 from PyQt5.QtCore import QSettings, Qt, QStandardPaths, QDir
-from PyQt5.QtWidgets import QDialog, QGridLayout, QLineEdit, QPushButton, QLabel, QCheckBox, QProgressBar, QGroupBox, QHBoxLayout, QFileDialog
+from PyQt5.QtWidgets import QDialog, QGridLayout, QLineEdit, QPushButton, QLabel, QCheckBox, QProgressBar, QGroupBox, QHBoxLayout, QFileDialog, QStyleFactory, QComboBox, QApplication
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
 
@@ -199,3 +199,122 @@ class RestoreWindow(QDialog):
 		backup_file.close()
 		progress_count += 1
 		self.progress.setValue(progress_count)
+
+class SettingsWindow(QDialog):
+
+	def __init__(self):
+		super(SettingsWindow, self).__init__()
+		self.initUI()
+
+	def initUI(self):
+		self.layout = QGridLayout()
+		#self.resize(800, 500)
+		self.setModal(True)
+		self.setWindowTitle("Settings")
+
+		self.style_list = list(map(lambda x: x.lower(), QStyleFactory().keys())) # Getting all available style for Qt5 application and making it to lower case list.
+
+		### Creating layout for "Style" portion of the Settings
+		box_style = QGroupBox("Style")
+		box_style.layout = QHBoxLayout()
+		self.combo_box_style = QComboBox()
+		self.combo_box_style.setFocusPolicy(Qt.NoFocus)
+		self.combo_box_style.addItems(self.style_list)
+		self.combo_box_style.setCurrentText(settings.value("currentStyle")) # Setting combo box value to the value that is saved in settings.
+		self.combo_box_style.currentTextChanged.connect(self.change_style)
+		box_style.layout.addWidget(self.combo_box_style)
+		box_style.setLayout(box_style.layout)
+
+		### Creating layout for "Playback" portion of the settings
+		# Choosing root directory of shows folder.
+		playback_message = QLabel("Choose directory where you keep all your shows")
+		playback_message.setAlignment(Qt.AlignHCenter)
+		self.playback_line_edit = QLineEdit()
+		self.playback_line_edit.setReadOnly(True)
+		if settings.contains("videoDir"):
+			# If settings has a value for videoDir path to that dir will be set in to the line_edit
+			self.playback_line_edit.setText(settings.value("videoDir"))
+		self.playback_line_edit.setPlaceholderText("Choose root folder of all shows")
+		button_playback_choose = QPushButton("Choose")
+		button_playback_choose.setFocusPolicy(Qt.NoFocus)
+		button_playback_choose.clicked.connect(self.choose_video_directory) # Launches window to choose directory where user keeps shows.
+
+		# Choosing media player.
+		self.combo_box_media_player = QComboBox()
+		self.combo_box_media_player.setFocusPolicy(Qt.NoFocus)
+		self.combo_box_media_player_list = ["", "vlc", "mpv"]
+		self.combo_box_media_player.addItems(self.combo_box_media_player_list)
+		if settings.contains("videoPlayer"):
+			# If videoPlayer value already exists in settings that value will be set in combo_box
+			self.combo_box_media_player.setCurrentText(settings.value("videoPlayer"))
+		self.combo_box_media_player.currentTextChanged.connect(self.change_player)
+
+		# Setting "Playback" layout
+		box_playback = QGroupBox("Playback")
+		box_playback.layout = QGridLayout()
+		box_playback.layout.addWidget(playback_message, 0, 0, 1, 6)
+		box_playback.layout.addWidget(self.playback_line_edit, 1, 0, 1, 5)
+		box_playback.layout.addWidget(button_playback_choose, 1, 5, 1, 1)
+		box_playback.layout.addWidget(self.combo_box_media_player, 2, 0, 1, 6)
+		box_playback.setLayout(box_playback.layout)
+
+		### Main buttons and other layout stuff
+		self.button_cancel = QPushButton("Cancel")
+		self.button_cancel.setFocusPolicy(Qt.NoFocus)
+		self.button_cancel.clicked.connect(self.reject)
+		self.button_apply = QPushButton("Apply")
+		self.button_apply.setFocusPolicy(Qt.NoFocus)
+		self.button_apply.setEnabled(False)
+		self.button_apply.clicked.connect(self.apply_changes)
+		self.button_ok = QPushButton("Ok")
+		self.button_ok.setFocusPolicy(Qt.NoFocus)
+		self.button_ok.clicked.connect(self.clicked_ok)
+
+		self.layout.addWidget(box_style, 0, 0, 1, 6)
+		self.layout.addWidget(box_playback, 1, 0, 2, 6)
+		self.layout.addWidget(self.button_cancel, 4, 0, 1, 1)
+		self.layout.addWidget(self.button_apply, 4, 4, 1, 1)
+		self.layout.addWidget(self.button_ok, 4, 5, 1, 1)
+		self.setLayout(self.layout)
+		self.show()
+
+	def change_style(self, style):
+		# Simply checks if selected style maches with the current one.
+		# If it doesn't enables "Apply" button.
+		if style != settings.value("currentStyle"):
+			self.button_apply.setEnabled(True)
+		else:
+			self.button_apply.setEnabled(False)
+	
+	def choose_video_directory(self):
+		# Displays a window for user to choose a directory where (s)he keeps shows.
+		location_home = QStandardPaths.standardLocations(QStandardPaths.HomeLocation)[0]
+		video_dir = QFileDialog.getExistingDirectory(self, "Choose directory", location_home)
+		if video_dir != "": # If user cancels window instead of choosing a catalog dialog window returns empty sting. In that case nothing happens.
+			# Set path to chosen directory to the line_edit and enabled apply button.
+			self.playback_line_edit.setText(video_dir)
+			self.button_apply.setEnabled(True)
+	
+	def change_player(self, player):
+		# Enables "Apply button if user choose new player"
+		if player != settings.value("videoPlayer"):
+			self.button_apply.setEnabled(True)
+		else:
+			self.button_apply.setEnabled(False)
+	
+	def apply_changes(self):
+		if settings.value("currentStyle") != self.combo_box_style.currentText():
+			# Changes style and saves it to settings
+			QApplication.setStyle(self.combo_box_style.currentText())
+			settings.setValue("currentStyle", self.combo_box_style.currentText())
+		if settings.value("videoDir") != self.playback_line_edit.text():
+			# Saves chosen dir to settings
+			settings.setValue("videoDir", self.playback_line_edit.text())
+		if settings.value("videoPlayer") != self.combo_box_media_player.currentText():
+			settings.setValue("videoPlayer", self.combo_box_media_player.currentText())
+		self.button_apply.setEnabled(False) # Disables "Apply" button.
+		
+	def clicked_ok(self):
+		# Combines apply changes and closes window with accept signal.
+		self.apply_changes()
+		self.accept()

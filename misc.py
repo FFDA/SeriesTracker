@@ -1,7 +1,7 @@
 #! /usr/bin/python3
 
-from PyQt5.QtWidgets import QDesktopWidget, QDialog, QLabel, QPushButton, QVBoxLayout
-from PyQt5.QtCore import QStandardPaths, QDir, QSettings
+from PyQt5.QtWidgets import QDesktopWidget, QDialog, QLabel, QPushButton, QVBoxLayout, QApplication
+from PyQt5.QtCore import QStandardPaths, QDir, QSettings, Qt
 from PyQt5.QtNetwork import QNetworkInterface
 from PyQt5.QtGui import QColor
 import re
@@ -45,6 +45,7 @@ def init_settings():
 	settings.setValue("width", 1200)
 	settings.setValue("height", 800)
 	settings.setValue("coverDir", cover_folder)
+	settings.setValue("currentStyle", QApplication.style().objectName())
 	
 	QDir().mkpath(settings.value("coverDir")) # Creates a path to cover folder
 
@@ -103,12 +104,12 @@ def row_backgound_color(air_date, episode_state):
 		# If episode checked as watched it is always has blue background
 		return blue
 			
-class CheckInternet(QDialog):
+class MessagePrompt(QDialog):
 	# Prompts user with a message that is passed to this class.
 	# Has only one button "OK"
 	
 	def __init__(self, message):
-		super(CheckInternet, self).__init__()
+		super(MessagePrompt, self).__init__()
 		self.message = message
 		self.initUI()
 		
@@ -116,11 +117,12 @@ class CheckInternet(QDialog):
 		self.setModal(True)
 		self.layout = QVBoxLayout()
 		message_label = QLabel(self.message)
-		
 		button_ok = QPushButton("OK")
+		button_ok.setMaximumWidth(100)
 		button_ok.clicked.connect(self.accept)
 		
 		self.layout.addWidget(message_label)
 		self.layout.addWidget(button_ok)
 		self.setLayout(self.layout)
+		self.layout.setAlignment(button_ok, Qt.AlignHCenter)
 		self.show()

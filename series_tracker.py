@@ -6,10 +6,10 @@ import sqlite3
 from functools import partial
 
 # Importing PyQt5 stuff
-from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings
+from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, QUrl
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QDialog, QShortcut, QMenu
-from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
+from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QDesktopServices
 from PyQt5.QtNetwork import QNetworkInterface
 
 from database import *
@@ -30,6 +30,8 @@ class mainWindow(QMainWindow):
 		# Checks if there is a settings file.
 		if settings.contains("width") == False:
 			init_settings()
+
+		QApplication.setStyle(settings.value("currentStyle"))
 		
 		db = DatabaseConnection
 		db.check(self)
@@ -44,7 +46,7 @@ class mainWindow(QMainWindow):
 class TabWidget(QWidget):
 	
 	def __init__(self, parent):
-		super(QWidget, self).__init__(parent)
+		super(TabWidget, self).__init__(parent)
 		# Initializeing layout for the widget of the main Window?
 		self.layout = QGridLayout(self)
 		
@@ -52,6 +54,8 @@ class TabWidget(QWidget):
 		button_tools_menu = QMenu()
 		button_tools_menu.addAction("Backup", self.open_backup_window)
 		button_tools_menu.addAction("Restore", self.open_restore_window)
+		button_tools_menu.addAction("Open Root Dir", self.open_root_dir)
+		button_tools_menu.addAction("Settings", self.open_settings_window)
 		button_tools = QPushButton("Tools")
 		button_tools.setMenu(button_tools_menu)
 		button_tools.setFocusPolicy(Qt.NoFocus)
@@ -155,6 +159,19 @@ class TabWidget(QWidget):
 	def open_restore_window(self):
 		self.restore_window = RestoreWindow()
 		self.restore_window.exec_()
+	
+	def open_settings_window(self):
+		self.settings_window = SettingsWindow()
+		self.settings_window.exec_()
+
+	def open_root_dir(self):
+		# Opens directory that was set up as root for video files in settings.
+		# If user haven' done it yet message will be displayed.
+		if settings.contains("videoDir"):
+			QDesktopServices.openUrl(QUrl(settings.value("videoDir")))
+		else:
+			MessagePrompt("Root dir for video files hasn't been set up. Do it in settings.").exec_() # This class defined in misc.py
+
 		
 class CreateEpisodesTable:
 
@@ -525,7 +542,7 @@ class CreateShowTables:
 	def open_add_show(self):
 		
 		if has_internet_connection() == False:
-			CheckInternet("Please connect to internet").exec_() # This class is defined in misc.py
+			MessagePrompt("Please connect to internet").exec_() # This class is defined in misc.py
 			return
 		else:
 			self.open_add_show_window = AddShow()

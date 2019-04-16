@@ -9,7 +9,7 @@ from os import listdir
 from subprocess import Popen
 
 # PyQt5 imports
-from PyQt5.QtWidgets import QDialog, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QComboBox, QMenu, QDesktopWidget, QSizePolicy
+from PyQt5.QtWidgets import QDialog, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QComboBox, QMenu, QSizePolicy
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QFont, QPixmap
 from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, pyqtSignal, QObject, QSize
 
@@ -46,13 +46,13 @@ class OpenShowWindow(QWidget):
 
 		# Checks if there is a folder with the same name as show title in set directory
 		episode_list = dict() # Default value is empty dictionary to mark that there isn't such folder.
-		if self.title in listdir("/media/Data/Torrents/Serialai/"):
-			episode_list["path"] = "/media/Data/Torrents/Serialai/" + self.title + QDir.separator()
+		if self.title in listdir(settings.value("videoDir")):
+			episode_list["path"] = settings.value("videoDir") + QDir.separator() + self.title + QDir.separator() # Adds full path to the folder with all episodes the dictionary.
 			# If folder is found. Every seasonal_episode_id that is found is added to dictionary.
-			for file_name in listdir("/media/Data/Torrents/Serialai/" + self.title):
+			for file_name in listdir(settings.value("videoDir") + QDir.separator() + self.title):
 				episode_seasonal_id = get_seasonal_id(file_name) # This function is in misc.py
 				if episode_seasonal_id!= None:
-					episode_list[episode_seasonal_id] = file_name
+					episode_list[episode_seasonal_id] = file_name # Adds dictionary pair of episode_seasonal_id as a key and full file name as a value from scanned folder.
 
 		self.episodes_table = CreateShowInfoEpisodeTable(self.IMDB_id, episode_list) # Initiating episode table
 		
@@ -200,7 +200,7 @@ class OpenShowWindow(QWidget):
 	def download_cover(self):
 		# Downloads cover for a show and displays it.
 		if has_internet_connection() == False:
-			CheckInternet("Please connect to internet").exec_() # This class is defined in misc.py
+			MessagePrompt("Please connect to internet").exec_() # This class is defined in misc.py
 			return
 		else:
 			path_to_cover = settings.value("coverDir") + self.IMDB_id + ".jpg"
@@ -292,10 +292,10 @@ class OpenShowWindow(QWidget):
 		# This function opens shows Webpage
 		
 		if has_internet_connection() == False:
-			CheckInternet("Please connect to internet").exec_() # This class is defined in misc.py
+			MessagePrompt("Please connect to internet").exec_() # This class is defined in misc.py
 			return
 		else:
-			imdb_url = "https://www.imdb.com/title/" + self.IMDB_id
+			imdb_url = "https://www.imdb.com/title/" + self.IMDB_id + "/"
 			webbrowser.open(imdb_url, new=2, autoraise=True)
 	
 	def print_season(self, season):
@@ -315,7 +315,7 @@ class OpenShowWindow(QWidget):
 	def open_fix_season(self):
 		
 		if has_internet_connection() == False:
-			CheckInternet("Please connect to internet").exec_() # This class is defined in misc.py
+			MessagePrompt("Please connect to internet").exec_() # This class is defined in misc.py
 			return
 		else:
 			self.open_fix_season_window = FixSeason(self.IMDB_id, self.seasons, self.unknown_season, self.title)
@@ -353,7 +353,7 @@ class OpenShowWindow(QWidget):
 			
 	def open_update_single_season(self):
 		if has_internet_connection() == False:
-			CheckInternet("Please connect to internet").exec_() # This class is defined in misc.py
+			MessagePrompt("Please connect to internet").exec_() # This class is defined in misc.py
 			return
 		else:
 			self.open_update_single_season_window = UpdateSingleSeason(self.IMDB_id, self.seasons, self.unknown_season, self.title)
@@ -364,7 +364,7 @@ class OpenShowWindow(QWidget):
 	
 	def open_update_last_3_seasons(self):
 		if has_internet_connection() == False:
-			CheckInternet("Please connect to internet").exec_() # This class is defined in misc.py
+			MessagePrompt("Please connect to internet").exec_() # This class is defined in misc.py
 			return
 		else:
 			self.open_update_single_season_window = UpdateThreeSeasons(self.IMDB_id, self.seasons, self.unknown_season, self.title)
@@ -375,7 +375,7 @@ class OpenShowWindow(QWidget):
 			
 	def open_update_show_info(self):
 		if has_internet_connection() == False:
-			CheckInternet("Please connect to internet").exec_() # This class is defined in misc.py
+			MessagePrompt("Please connect to internet").exec_() # This class is defined in misc.py
 			return
 		else:
 			self.open_update_show_info_window = UpdateShowInfo(self.IMDB_id, self.title)
@@ -528,8 +528,11 @@ class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
 
 			if button_text == "Play": # If cell with text "Play" clicked
 				episode_seasonal_id = self.table_model.item(pos.row(), 1).text() # Gets episode_seasonl_id from column 1 of the table
-				path_to_episode = self.episode_list["path"] + self.episode_list[episode_seasonal_id])
-				Popen(["mpv", path_to_episode]])
+				path_to_episode = self.episode_list["path"] + self.episode_list[episode_seasonal_id] # Makes path to the episode that user wants to play by two valies from dictionary: path to the folder where all episodes are located and full file name of the episode.
+				if settings.contains("videoPlayer") and settings.value("videoPlayer") != "":
+					Popen([settings.value("videoPlayer"), path_to_episode]) # Launches episodes launching chosen media player and passing path to the file.
+				else:
+					MessagePrompt("It seems you haven't chosen video player yet. Do it in settings.").exec()
 			else:
 				episode_IMDB_id = self.table_model.item(pos.row(), self.column_to_hide).text() # Gets episodes_IMDB_ID from hidden column
 					
