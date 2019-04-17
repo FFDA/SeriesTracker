@@ -367,8 +367,8 @@ class OpenShowWindow(QWidget):
 			MessagePrompt("Please connect to internet").exec_() # This class is defined in misc.py
 			return
 		else:
-			self.open_update_single_season_window = UpdateThreeSeasons(self.IMDB_id, self.seasons, self.unknown_season, self.title)
-			result = self.open_update_single_season_window.exec_()
+			self.open_update_last_3_season_window = UpdateThreeSeasons(self.IMDB_id, self.seasons, self.unknown_season, self.title)
+			result = self.open_update_last_3_season_window.exec_()
 			
 			if result == QDialog.Accepted:
 				self.episodes_table.refill_episode_table()

@@ -291,7 +291,7 @@ class UpdateSingleSeason(QDialog):
 class UpdateThreeSeasons(UpdateSingleSeason):
 	
 	def __init__(self, IMDB_id, seasons, unknown_season, title):
-		super(UpdateThreeSeasons, self).__init__()
+		super(UpdateSingleSeason, self).__init__() # Parent class name has to be passed to super for it to work!
 		self.IMDB_id = IMDB_id
 		self.seasons = seasons
 		self.unknown_season = unknown_season

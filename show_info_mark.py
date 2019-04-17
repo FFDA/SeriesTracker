@@ -19,7 +19,7 @@ settings = QSettings("SeriesTracker", "SeriesTracker")
 class MarkSeasonAsNotWatched(QDialog):
 	
 	def __init__(self, IMDB_id, seasons, unknown_season, title):
-		super(QDialog, self).__init__()
+		super(MarkSeasonAsNotWatched, self).__init__()
 		self.IMDB_id = IMDB_id
 		self.seasons = seasons
 		self.unknown_season = unknown_season
@@ -98,7 +98,7 @@ class MarkSeasonAsNotWatched(QDialog):
 class MarkSeasonAsWatched(MarkSeasonAsNotWatched):
 	
 	def __init__(self, IMDB_id, seasons, unknown_season, title):
-		super(MarkSeasonAsNotWatched, self).__init__()
+		super(MarkSeasonAsWatched, self).__init__()
 		self.IMDB_id = IMDB_id
 		self.seasons = seasons
 		self.unknown_season = unknown_season
