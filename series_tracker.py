@@ -30,8 +30,6 @@ class mainWindow(QMainWindow):
 		# Checks if there is a settings file.
 		if settings.contains("width") == False:
 			init_settings()
-
-		QApplication.setStyle(settings.value("currentStyle"))
 		
 		db = DatabaseConnection
 		db.check(self)
@@ -67,8 +65,8 @@ class TabWidget(QWidget):
 		self.tab2 = QWidget()
 
 		# Adding tabs to the tabs (QTabWidget) widget and setttig names for it.
-		self.tabs.addTab(self.tab1, "Recent Episodes")
-		self.tabs.addTab(self.tab2, "Shows")
+		self.tabs.addTab(self.tab1, "W&atchlist Episodes")
+		self.tabs.addTab(self.tab2, "&Shows")
 		
 		# Detecting if tab changed and innitaing function.
 		self.tabs.currentChanged.connect(self.tab_changed)
@@ -130,7 +128,7 @@ class TabWidget(QWidget):
 		self.shows_table.fill_table()
 
 		self.tab2.layout.addWidget(self.shows_table.button_box, 0, 0, 1, 4)
-		self.tab2.layout.addWidget(self.shows_table.button_add_show_box, 0, 5, 1, 1)
+		self.tab2.layout.addWidget(self.shows_table.button_add_show, 0, 5, 1, 1)
 		self.tab2.layout.addWidget(self.shows_table.filter_box,1, 0, 1, 6)
 		self.tab2.layout.addWidget(self.shows_table.shows_table, 2, 0, 10, 6)
 		self.tab2.setLayout(self.tab2.layout)
@@ -378,15 +376,10 @@ class CreateShowTables:
 
 		# Innitiating box for buttons and adding layout for it.
 		
-		self.button_add_show_box = QGroupBox()
-		self.button_add_show_box.layout = QHBoxLayout()	
-		
 		# Creates Add Show button and it's layout.
-		button_add_show = QPushButton("Add Show")
-		button_add_show.setFocusPolicy(Qt.NoFocus)
-		button_add_show.clicked.connect(self.open_add_show)
-		self.button_add_show_box.layout.addWidget(button_add_show)		
-		self.button_add_show_box.setLayout(self.button_add_show_box.layout)
+		self.button_add_show = QPushButton("Add Show")
+		self.button_add_show.setFocusPolicy(Qt.NoFocus)
+		self.button_add_show.clicked.connect(self.open_add_show)
 		
 		self.get_show_count()
 		
@@ -672,5 +665,6 @@ class CreateShowEpisodeTable(CreateEpisodesTable):
 if __name__ == "__main__":
 	
 	app = QApplication(sys.argv)
+	app.setStyle(settings.value("currentStyle")) # Setting application's style.
 	mainWindow = mainWindow()
 	sys.exit(app.exec_())

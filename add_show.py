@@ -167,7 +167,7 @@ class AddShow(QDialog):
 			finished_airing = 1	
 		
 		fetched_show_info_detailed = fetched_show_info_detailed = self.imdb.get_title_episodes_detailed(IMDB_id, 1)
-		running_time = get_running_time(fetched_show_info_detailed, show_info_auxiliary)
+		running_time = self.get_running_time(fetched_show_info_detailed, show_info)
 		
 		# Setting years airing that will be inserted into database.
 		if show_start_year == show_end_year:
@@ -317,8 +317,8 @@ class AddShow(QDialog):
 				sql_insert_episode.exec_()
 				
 				added_episode_count += 1						
-				progress_bar_value += 1
-				self.progress_bar.setValue(progress_bar_value)
+			progress_bar_value += 1
+			self.progress_bar.setValue(progress_bar_value)
 		
 		self.info_box.append("Finished adding show.")
 		self.info_box.append("Total episodes: {}".format(added_episode_count))
