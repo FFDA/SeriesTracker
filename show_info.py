@@ -52,7 +52,7 @@ class OpenShowWindow(QWidget):
 			for file_name in listdir(settings.value("videoDir") + QDir.separator() + self.title):
 				episode_seasonal_id = get_seasonal_id(file_name) # This function is in misc.py
 				if episode_seasonal_id!= None:
-					episode_list[episode_seasonal_id] = file_name # Adds dictionary pair of episode_seasonal_id as a key and full file name as a value from scanned folder.
+					episode_list[episode_seasonal_id.upper()] = file_name # Adds dictionary pair of episode_seasonal_id as a key and full file name as a value from scanned folder.
 
 		self.episodes_table = CreateShowInfoEpisodeTable(self.IMDB_id, episode_list) # Initiating episode table
 		

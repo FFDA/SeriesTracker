@@ -64,7 +64,7 @@ def has_internet_connection():
 		return False
 
 # This small regex function finds and returns a episode_seasonl_id from file name.
-seasonal_id_pattern = re.compile("S\d+E\d+")
+seasonal_id_pattern = re.compile("S\d+E\d+", re.IGNORECASE)
 def get_seasonal_id(file_name):
 	if seasonal_id_pattern.search(file_name):
 		return seasonal_id_pattern.search(file_name)[0]
