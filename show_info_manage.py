@@ -1,7 +1,7 @@
 #! /usr/bin/python3
 
 from imdbpie import Imdb
-from misc import center, check_if_input_contains_IMDB_id
+from misc import center, check_if_input_contains_IMDB_id, row_backgound_color
 
 from PyQt5.QtWidgets import QDialog, QPushButton, QProgressBar, QComboBox, QLabel, QProgressBar, QGridLayout, QTextEdit
 from PyQt5.QtSql import QSqlQuery

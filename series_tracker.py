@@ -10,7 +10,6 @@ from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, QUrl
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QDialog, QShortcut, QMenu
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QDesktopServices
-from PyQt5.QtNetwork import QNetworkInterface
 
 from database import *
 from misc import *
@@ -515,7 +514,6 @@ class CreateShowTables:
 		self.shows_table.doubleClicked.disconnect(self.open_show) # Disconnects table with double click signal. Otherwise with every chage of the table when buttons are used it will add more signals. This signal will be reimplemented with fill_table().
 		self.fill_table()
 		self.redo_buttons()
-
 	
 	def redo_buttons(self):
 		self.get_show_count()
@@ -635,17 +633,18 @@ class CreateShowEpisodeTable(CreateEpisodesTable):
 		if pos.column() == 4:
 			episode_button = self.table_model.item(pos.row(), pos.column()).text()
 			episode_IMDB_id = self.table_model.item(pos.row(), 5).text()
+			episode_air_date = self.table_model.item(pos.row(), 2).text()
 			
 			if episode_button == "Watched":
 				episode_state = "1"
 				button_text = "Not Watched"			
 				checkbox_state = Qt.Checked
-				episode_watched_color = QColor(200, 230, 255)
+				episode_watched_color = row_backgound_color(episode_air_date, int(episode_state))
 			else:
 				episode_state = "0"
 				button_text = "Watched"
 				checkbox_state = Qt.Unchecked
-				episode_watched_color = QColor(200, 255, 170)
+				episode_watched_color = row_backgound_color(episode_air_date, int(episode_state))
 
 			mark_episode = QSqlQuery("UPDATE %s SET episode_watched = %s WHERE episode_IMDB_id = '%s'" % (self.IMDB_id, episode_state, episode_IMDB_id))
 			mark_episode.exec_()

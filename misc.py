@@ -52,14 +52,14 @@ def init_settings():
 def has_internet_connection():
 	# Checks if there is an internet conncetion and returns True or False appropriately.
 	
-	ct = 0 
+	ct = 0 # Just a toggle to mark if found at least one internnet interface that is active
 	
-	for interface in QNetworkInterface().allInterfaces():
-		if (bool(interface.flags() & QNetworkInterface().IsUp and not interface.flags() & QNetworkInterface().IsLoopBack)) == True:
+	for interface in QNetworkInterface().allInterfaces(): # Loops throught all internet interfaces that Qt5 finds.
+		if (bool(interface.flags() & QNetworkInterface().IsUp and not interface.flags() & QNetworkInterface().IsLoopBack)) == True: # Checks in interface is active and it is not loop interface.
 			ct += 1
 	
 	if ct > 0: # This may give some problems in the future
-		return True
+		return True # Returns true if at least one internet interface passed an if statement.
 	else:
 		return False
 
@@ -100,9 +100,11 @@ def row_backgound_color(air_date, episode_state):
 				return green
 			else:
 				return red
+	
 	else:
 		# If episode checked as watched it is always has blue background
 		return blue
+
 			
 class MessagePrompt(QDialog):
 	# Prompts user with a message that is passed to this class.

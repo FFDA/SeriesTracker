@@ -74,7 +74,7 @@ class OpenShowWindow(QWidget):
 		self.show()
 		
 		self.episodes_table.episode_table.scrollToBottom() # Scrolls table to the bottom
-		self.episodes_table.episode_marked.connect(self.refill_show_info)
+		self.episodes_table.episode_marked.connect(self.refill_show_info_box)
 	
 	def fetch_show_info(self):
 		# Fetching data about show and seving them as variables to send to other functions/classes later.
@@ -231,11 +231,11 @@ class OpenShowWindow(QWidget):
 		if self.unknown_season == 1:
 			season_list.append("Unknown")
 
-		season_button = QComboBox()
-		season_button.setMinimumSize(95, 31)
-		season_button.setFocusPolicy(Qt.NoFocus)
-		season_button.insertItems(0, season_list) # Adding all the options from season_list to the drop down menu
-		season_button.currentTextChanged.connect(self.print_season) # Detects if user chooses different season and send value to print_season function
+		self.season_button = QComboBox()
+		self.season_button.setMinimumSize(95, 31)
+		self.season_button.setFocusPolicy(Qt.NoFocus)
+		self.season_button.insertItems(0, season_list) # Adding all the options from season_list to the drop down menu
+		self.season_button.currentTextChanged.connect(self.print_season) # Detects if user chooses different season and send value to print_season function
 		
 		season_button_label = QLabel("Season")
 
@@ -279,7 +279,7 @@ class OpenShowWindow(QWidget):
 		manage_button.setMinimumSize(150, 31)
 
 		self.button_box.layout.addWidget(season_button_label)
-		self.button_box.layout.addWidget(season_button)
+		self.button_box.layout.addWidget(self.season_button)
 		self.button_box.layout.insertStretch(2)
 		self.button_box.layout.addWidget(mark_as_button)
 		self.button_box.layout.addWidget(update_button)
@@ -384,6 +384,8 @@ class OpenShowWindow(QWidget):
 			if result == QDialog.Accepted:
 				self.fetch_show_info()
 				self.fill_show_info_box()
+				self.update_season_list_combo_box
+				
 			
 	def open_change_list(self):
 		self.open_change_list_window = ChangeList(self.IMDB_id, self.finished_watching, self.title)
@@ -403,9 +405,38 @@ class OpenShowWindow(QWidget):
 			self.close() # SHOULD close the window
 			
 	def refill_show_info(self):
+		# This refill all info of the show info page including episode table.
+		# It is used mostly after update functions.
 		self.fetch_show_info()
 		self.fill_show_info_box()
 		self.episodes_table.refill_episode_table()
+
+	def refill_show_info_box(self):
+		# This function refills just info of the show, but not the table.
+		# It is used when episode is marked as watched to chage watched time count.
+		self.fetch_show_info()
+		self.fill_show_info_box()
+
+	def update_season_list_combo_box(self):
+		# This function only update combo box that contains list of all seasons in show info box.
+		# It will be used only after when show info is updated.
+		# Code is mostly copied from create_button fucntion.
+
+		# Season list that contains all season numbers in string form that will be used later on to populate drop down menu for user to choose a season from.
+		# First value has "All" that prints all show's seasons.
+		# If show has "Unknown" season list will have an option to choose it too.
+		season_list = ["All"]
+
+		# Appends all seasons in string from to season_list
+		for i in range(self.seasons):
+			season_list.append(str(i + 1))
+
+		# Appends "Unknown" to the end of the list if there is an unknown season.
+		if self.unknown_season == 1:
+			season_list.append("Unknown")
+
+		self.season_button.clear() # Cleared combo box.
+		self.season_list.insertItems(0, season_list) # Adds updated season list to combo box.
 
 		
 class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
@@ -544,10 +575,11 @@ class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
 				else:
 					return
 
-				mark_episode = QSqlQuery("UPDATE %s SET episode_watched = %s WHERE episode_IMDB_id = '%s'" % (self.IMDB_id, episode_state, episode_IMDB_id))
-				mark_episode.exec_()
 				self.table_model.item(pos.row(), self.column_to_hide - 1).setForeground(mark_button_color)
 				self.table_model.item(pos.row(), 0).setCheckState(checkbox_state) # Changes state of checkbox
+
+				mark_episode = QSqlQuery("UPDATE %s SET episode_watched = %s WHERE episode_IMDB_id = '%s'" % (self.IMDB_id, episode_state, episode_IMDB_id))
+				mark_episode.exec_()
 
 				# Changes background color of the row.
 				for n in range(4):
