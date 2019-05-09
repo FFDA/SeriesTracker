@@ -7,6 +7,7 @@ import webbrowser
 from urllib import request
 from os import listdir
 from subprocess import Popen
+import re
 
 # PyQt5 imports
 from PyQt5.QtWidgets import QDialog, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QComboBox, QMenu, QSizePolicy
@@ -46,13 +47,14 @@ class OpenShowWindow(QWidget):
 
 		# Checks if there is a folder with the same name as show title in set directory
 		episode_list = dict() # Default value is empty dictionary to mark that there isn't such folder.
-		if self.title in listdir(settings.value("videoDir")):
-			episode_list["path"] = settings.value("videoDir") + QDir.separator() + self.title + QDir.separator() # Adds full path to the folder with all episodes the dictionary.
-			# If folder is found. Every seasonal_episode_id that is found is added to dictionary.
-			for file_name in listdir(settings.value("videoDir") + QDir.separator() + self.title):
-				episode_seasonal_id = get_seasonal_id(file_name) # This function is in misc.py
-				if episode_seasonal_id!= None:
-					episode_list[episode_seasonal_id.upper()] = file_name # Adds dictionary pair of episode_seasonal_id as a key and full file name as a value from scanned folder.
+		for title in listdir(settings.value("videoDir")):
+			if re.sub(" ", ".", self.title) == re.sub(" ", ".", title)[:len(self.title)]: # This part detects the folder that starts with the same words as show's title.
+				episode_list["path"] = settings.value("videoDir") + QDir.separator() + self.title + QDir.separator() # Adds full path to the folder with all episodes the dictionary.
+				# If folder is found. Every seasonal_episode_id that is found is added to dictionary.
+				for file_name in listdir(settings.value("videoDir") + QDir.separator() + title):
+					episode_seasonal_id = get_seasonal_id(file_name) # This function is in misc.py
+					if episode_seasonal_id!= None:
+						episode_list[episode_seasonal_id.upper()] = file_name # Adds dictionary pair of episode_seasonal_id as a key and full file name as a value from scanned folder.
 
 		self.episodes_table = CreateShowInfoEpisodeTable(self.IMDB_id, episode_list) # Initiating episode table
 		
