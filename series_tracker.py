@@ -6,7 +6,7 @@ import sqlite3
 from functools import partial
 
 # Importing PyQt5 stuff
-from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, QUrl
+from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, QUrl, pyqtSignal
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QDialog, QShortcut, QMenu
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QDesktopServices
@@ -135,7 +135,6 @@ class TabWidget(QWidget):
 		focus_search = QShortcut("CTRL+F", self)
 		focus_search.activated.connect(self.set_focus_on_search)
 		
-				
 	def tab_changed(self, index):
 		# Checks to which tab user changed to. Set focus on search field in "Shows" tab.
 		if index == 0:
@@ -463,7 +462,7 @@ class CreateShowTables:
 		self.filter_model.setFilterCaseSensitivity(Qt.CaseInsensitive) # Making filter regex not case sensitive.
 
 		# TableView model that actually displays show table
-		self.shows_table = QTableView()
+		self.shows_table = ShowsTableView()
 		self.shows_table.setWordWrap(False) # Had to add this, because PyQt5 from pip has different default parameters from feroda's repository's PyQt5.
 		self.shows_table.setModel(self.filter_model)
 		self.shows_table.verticalHeader().setVisible(False)
@@ -476,6 +475,8 @@ class CreateShowTables:
 		self.shows_table.hideColumn(5) # Hides column that has IMDB_id in it.
 		self.shows_table.setSortingEnabled(True) # Enables sorting by column when clicking on them.
 		self.shows_table.sortByColumn(0, Qt.AscendingOrder)
+
+		self.shows_table.openShow.connect(self.open_show) # Connects key "Enter" with open_show
 
 
 	def fill_table(self):
@@ -660,6 +661,32 @@ class CreateShowEpisodeTable(CreateEpisodesTable):
 		self.fill_episode_table()
 		self.episode_table.sortByColumn(1, Qt.AscendingOrder) # Sorts table in ascending order by seasonal ID
 
+
+class ShowsTableView(QTableView):
+	# This class exists only to make it possible to open ShowInfo window with Enter key.
+
+	openShow = pyqtSignal(object)
+
+	def keyPressEvent(self, event):
+	# This function detects keypresses and filters them.
+		if event.key() == Qt.Key_Return:
+		# Open show window if "Enter" is pressed.
+			if len(self.selectedIndexes()) != 0:
+				self.openShow.emit(self.selectedIndexes()[0])
+		elif event.key() == Qt.Key_Up:
+		# This part detects Up arrow presses end moves selection of the row up.
+			if len(self.selectedIndexes()) != 0:
+				self.selectRow(self.selectedIndexes()[0].row() - 1)
+			else:
+				# If there are no selected rows in the table it does nothing.
+				pass
+		elif event.key() == Qt.Key_Down:
+		# This part detects Down arrow presses and moves selection of the row down.
+			if len(self.selectedIndexes()) != 0:
+				self.selectRow(self.selectedIndexes()[0].row() + 1)
+			else:
+				# If there are no selected rows in the table it selects first row.
+				self.selectRow(0)
 
 if __name__ == "__main__":
 	
