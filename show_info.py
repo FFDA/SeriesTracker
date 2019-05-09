@@ -461,6 +461,8 @@ class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
 
 		self.table_model = QStandardItemModel()
 
+		self.episode_table = QTableView()
+
 		# Setting up to add play button if there are folder with episodes.
 		if len(self.episode_list) != 0:
 			self.table_column_count = 6 # Changing column count to add "Play" button.
@@ -473,7 +475,7 @@ class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
 		
 		self.fill_episode_table()
 
-		self.episode_table = QTableView()
+		
 		self.episode_table.setModel(self.table_model)
 		self.episode_table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents) # Adjust how much space table takes
 		self.episode_table.setEditTriggers(QAbstractItemView.NoEditTriggers) # Makes table not editable
@@ -503,14 +505,14 @@ class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
 
 		# Setting up "Play" button
 		if len(self.episode_list) != 0:
-			button_play =  QStandardItem("Play")
 
 			if episode.value("episode_seasonal_id") in self.episode_list:
 				button_play_color = QColor(0, 0, 0)
+				button_play =  QStandardItem("Play")
 			else:
 				button_play_color = QColor(160, 161, 162)
+				button_play =  QStandardItem("")
 				
-
 		# Setting background color for current row, checkbox's checkmark and setting "mark_watched" button status depending if episode is watched or not.
 		if episode_state == 1:
 			show_watched.setCheckState(Qt.Checked)
@@ -540,13 +542,16 @@ class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
 			self.table_model.setItem(row_count, 4, button_play)
 			self.table_model.item(row_count, 4).setTextAlignment(Qt.AlignCenter)
 			self.table_model.item(row_count, 4).setForeground(button_play_color)
+			if button_play.text() == "":
+				# Sets span of the cell (with episode's title) before the one that should have had "Play" button to take it's space.
+				self.episode_table.setSpan(row_count, 3, 1, 2)
 			self.table_model.setItem(row_count, 5, mark_button)
 			self.table_model.item(row_count, 5).setTextAlignment(Qt.AlignCenter)
 			self.table_model.item(row_count, 5).setForeground(mark_button_color)
 			self.table_model.setItem(row_count, 6, QStandardItem(episode.value("episode_IMDB_id")))
 		else:
 			# Row made this they if there is no folder with show's title.
-			# "Play" button is not add to the row.
+			# "Play" button is not added to the row.
 			self.table_model.setItem(row_count, 4, mark_button)
 			self.table_model.item(row_count, 4).setTextAlignment(Qt.AlignCenter)
 			self.table_model.item(row_count, 4).setForeground(mark_button_color)
