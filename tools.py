@@ -6,7 +6,7 @@ import re
 from os import listdir
 
 from PyQt5.QtCore import QSettings, Qt, QStandardPaths, QDir
-from PyQt5.QtWidgets import QDialog, QGridLayout, QLineEdit, QPushButton, QLabel, QCheckBox, QProgressBar, QGroupBox, QHBoxLayout, QFileDialog, QStyleFactory, QComboBox, QApplication
+from PyQt5.QtWidgets import QDialog, QGridLayout, QLineEdit, QPushButton, QLabel, QCheckBox, QProgressBar, QGroupBox, QHBoxLayout, QFileDialog, QStyleFactory, QComboBox, QApplication, QTextEdit
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
 
@@ -200,6 +200,68 @@ class RestoreWindow(QDialog):
 		progress_count += 1
 		self.progress.setValue(progress_count)
 
+class UpdateWatchlist(QDialog):
+	
+	def __init__(self):
+		super(UpdateWatchlist, self).__init__()
+		self.initUI()
+
+	def initUI(self):
+		self.layout = QGridLayout()
+		self.setModal(True)
+		self.resize(600, 400)
+		self.setWindowTitle("Update Watchlist")
+
+		### Message for the user
+		self.label_message = QLabel("This should be done rarely, because IMDB has some kind of protection against bots using their service and if it will be abused they might start block imdbpie")
+		self.label_message.setWordWrap(True)
+		self.label_message.setAlignment(Qt.AlignHCenter)
+		###
+
+		### Text Edit window, that displays info for the user
+		self.text_edit_message = QTextEdit()
+		self.text_edit_message.setReadOnly(True)
+		###
+
+		### Progress_bars.
+		self.progress_bar_current = QProgressBar()
+		self.progress_bar_overall = QProgressBar()
+		###
+
+		### Buttons for the layout
+		self.button_close = QPushButton("Close")
+		self.button_close.setFocusPolicy(Qt.NoFocus)
+		self.button_close.clicked.connect(self.reject)
+		self.button_update = QPushButton("Update")
+		self.button_update.setFocusPolicy(Qt.NoFocus)
+		self.button_update.clicked.connect(self.update_watchlist)
+		self.button_ok = QPushButton("OK")
+		self.button_ok.setFocusPolicy(Qt.NoFocus)
+		self.button_ok.clicked.connect(self.accept)
+		self.button_ok.setEnabled(False)
+		###
+
+		### Adding items to layout
+		self.layout.addWidget(self.label_message, 0, 0, 1, 4)
+		self.layout.addWidget(self.text_edit_message, 1, 0, 3, 4)
+		self.layout.addWidget(self.progress_bar_current, 4, 0, 1, 4)
+		self.layout.addWidget(self.progress_bar_overall, 5, 0, 1, 4)	
+		self.layout.addWidget(self.button_close, 6, 0, 1, 1)
+		self.layout.addWidget(self.button_update, 6, 2, 1, 1)
+		self.layout.addWidget(self.button_ok, 6, 3, 1, 1)
+		self.setLayout(self.layout)
+		###
+
+		self.show()
+
+	def update_watchlist(self):
+		self.text_edit_message.append("This does nothing right now.")
+		
+		
+		self.button_update.setEnabled(False)
+		self.button_close.setEnabled(False)
+		self.button_ok.setEnabled(True)
+
 class SettingsWindow(QDialog):
 
 	def __init__(self):
@@ -239,23 +301,12 @@ class SettingsWindow(QDialog):
 		button_playback_choose.setFocusPolicy(Qt.NoFocus)
 		button_playback_choose.clicked.connect(self.choose_video_directory) # Launches window to choose directory where user keeps shows.
 
-		# Choosing media player.
-		self.combo_box_media_player = QComboBox()
-		self.combo_box_media_player.setFocusPolicy(Qt.NoFocus)
-		self.combo_box_media_player_list = ["", "vlc", "mpv"]
-		self.combo_box_media_player.addItems(self.combo_box_media_player_list)
-		if settings.contains("videoPlayer"):
-			# If videoPlayer value already exists in settings that value will be set in combo_box
-			self.combo_box_media_player.setCurrentText(settings.value("videoPlayer"))
-		self.combo_box_media_player.currentTextChanged.connect(self.change_player)
-
 		# Setting "Playback" layout
 		box_playback = QGroupBox("Playback")
 		box_playback.layout = QGridLayout()
 		box_playback.layout.addWidget(playback_message, 0, 0, 1, 6)
 		box_playback.layout.addWidget(self.playback_line_edit, 1, 0, 1, 5)
 		box_playback.layout.addWidget(button_playback_choose, 1, 5, 1, 1)
-		box_playback.layout.addWidget(self.combo_box_media_player, 2, 0, 1, 6)
 		box_playback.setLayout(box_playback.layout)
 
 		### Main buttons and other layout stuff
@@ -295,13 +346,6 @@ class SettingsWindow(QDialog):
 			self.playback_line_edit.setText(video_dir)
 			self.button_apply.setEnabled(True)
 	
-	def change_player(self, player):
-		# Enables "Apply button if user choose new player"
-		if player != settings.value("videoPlayer"):
-			self.button_apply.setEnabled(True)
-		else:
-			self.button_apply.setEnabled(False)
-	
 	def apply_changes(self):
 		if settings.value("currentStyle") != self.combo_box_style.currentText():
 			# Changes style and saves it to settings
@@ -310,8 +354,7 @@ class SettingsWindow(QDialog):
 		if settings.value("videoDir") != self.playback_line_edit.text():
 			# Saves chosen dir to settings
 			settings.setValue("videoDir", self.playback_line_edit.text())
-		if settings.value("videoPlayer") != self.combo_box_media_player.currentText():
-			settings.setValue("videoPlayer", self.combo_box_media_player.currentText())
+		
 		self.button_apply.setEnabled(False) # Disables "Apply" button.
 		
 	def clicked_ok(self):

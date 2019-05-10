@@ -11,8 +11,8 @@ import re
 
 # PyQt5 imports
 from PyQt5.QtWidgets import QDialog, QMainWindow, QApplication, QVBoxLayout, QTabWidget, QLabel, QPushButton, QTableView, QAbstractScrollArea, QAbstractItemView, QHeaderView, QGroupBox, QHBoxLayout, QLineEdit, QGridLayout, QComboBox, QMenu, QSizePolicy
-from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QFont, QPixmap
-from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, pyqtSignal, QObject, QSize
+from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QFont, QPixmap, QDesktopServices
+from PyQt5.QtCore import Qt, QSortFilterProxyModel, QSettings, pyqtSignal, QObject, QSize, QUrl
 
 from series_tracker import CreateShowEpisodeTable
 from show_info_mark import *
@@ -566,11 +566,8 @@ class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
 
 			if button_text == "Play": # If cell with text "Play" clicked
 				episode_seasonal_id = self.table_model.item(pos.row(), 1).text() # Gets episode_seasonl_id from column 1 of the table
-				path_to_episode = self.episode_list["path"] + self.episode_list[episode_seasonal_id] # Makes path to the episode that user wants to play by two valies from dictionary: path to the folder where all episodes are located and full file name of the episode.
-				if settings.contains("videoPlayer") and settings.value("videoPlayer") != "":
-					Popen([settings.value("videoPlayer"), path_to_episode]) # Launches episodes launching chosen media player and passing path to the file.
-				else:
-					MessagePrompt("It seems you haven't chosen video player yet. Do it in settings.").exec()
+				path_to_episode = self.episode_list["path"] + self.episode_list[episode_seasonal_id] # Makes path to the episode that user wants to play by two valies 
+				QDesktopServices().openUrl(QUrl.fromLocalFile(path_to_episode))
 			else:
 				episode_IMDB_id = self.table_model.item(pos.row(), self.column_to_hide).text() # Gets episodes_IMDB_ID from hidden column
 					

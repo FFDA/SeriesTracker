@@ -52,6 +52,7 @@ class TabWidget(QWidget):
 		button_tools_menu.addAction("Backup", self.open_backup_window)
 		button_tools_menu.addAction("Restore", self.open_restore_window)
 		button_tools_menu.addAction("Open Root Dir", self.open_root_dir)
+		button_tools_menu.addAction("Update Watchlist", self.open_update_watchlist_window)
 		button_tools_menu.addAction("Settings", self.open_settings_window)
 		button_tools = QPushButton("Tools")
 		button_tools.setMenu(button_tools_menu)
@@ -155,6 +156,10 @@ class TabWidget(QWidget):
 	def open_restore_window(self):
 		self.restore_window = RestoreWindow()
 		self.restore_window.exec_()
+
+	def open_update_watchlist_window(self):
+		self.update_watchlist = UpdateWatchlist()
+		self.update_watchlist.exec_()
 	
 	def open_settings_window(self):
 		self.settings_window = SettingsWindow()
