@@ -6,7 +6,6 @@
 import webbrowser
 from urllib import request
 from os import listdir
-from subprocess import Popen
 import re
 
 # PyQt5 imports
@@ -58,7 +57,7 @@ class OpenShowWindow(QWidget):
 
 		self.episodes_table = CreateShowInfoEpisodeTable(self.IMDB_id, episode_list) # Initiating episode table
 		
-		self.episodes_table.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
+		self.episodes_table.sql_select_shows = "SELECT * FROM %s ORDER BY episode_seasonal_id ASC" % self.IMDB_id
 		self.episodes_table.create_table()	
 		
 		self.create_buttons()
@@ -124,7 +123,6 @@ class OpenShowWindow(QWidget):
 		self.label_seasons = QLabel()
 		self.label_seasons.setFont(font_other)
 
-		# Calculates and add to label how much minutes user spent watching show
 		self.label_watched_time = QLabel()
 		self.label_watched_time.setFont(font_other)
 
@@ -306,7 +304,7 @@ class OpenShowWindow(QWidget):
 		# It resets table row count to 0 (removes data from table) and initiates fill_episode_table() function.
 
 		if season == "All":
-			self.episodes_table.sql_select_shows = "SELECT * FROM %s" % self.IMDB_id
+			self.episodes_table.sql_select_shows = "SELECT * FROM %s ORDER BY episode_seasonal_id ASC" % self.IMDB_id # This "ORDER BY" is needed to sort episodes that do not have seasonal_id to the top.
 		elif season == "Unknown":
 			self.episodes_table.sql_select_shows = "SELECT * FROM %s WHERE season = ''" % self.IMDB_id
 		else:
@@ -471,18 +469,17 @@ class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
 		
 		self.table_model.setColumnCount(self.table_column_count)
 		self.table_model.setHorizontalHeaderLabels(self.horizontal_header_labels)
-		self.table_model.sort(1, Qt.AscendingOrder)		
+		# self.table_model.sort(1, Qt.AscendingOrder)		
 		
 		self.fill_episode_table()
 
-		
 		self.episode_table.setModel(self.table_model)
 		self.episode_table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents) # Adjust how much space table takes
 		self.episode_table.setEditTriggers(QAbstractItemView.NoEditTriggers) # Makes table not editable
 		self.episode_table.setSelectionBehavior(QAbstractItemView.SelectRows) # Clicking on cell selects row
 		self.episode_table.verticalHeader().setVisible(False) # Removing vertincal headers for rows (removing numbering)
 		self.episode_table.setSelectionMode(QAbstractItemView.NoSelection) # Makes not able to select cells or rows in table
-		self.episode_table.sortByColumn(1, Qt.AscendingOrder) # Sorts table in ascending order by seasonal ID
+		# self.episode_table.sortByColumn(1, Qt.AscendingOrder) # Sorts table in ascending order by seasonal ID
 		self.episode_table.hideColumn(self.column_to_hide) # Hidding last calumn that holds episode_IMDB_id value	
 		# self.episode_table.setShowGrid(False) # Removes grid
 		### Setting custom widths for some columns ###
@@ -537,7 +534,7 @@ class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
 		self.table_model.item(row_count, 3).setBackground(show_watched_color)
 		# This part of the row changes, because of the different count of the columns
 		if len(self.episode_list) != 0:
-			# Row is made this way if there is a folder for the episodes.
+			# Table's row is made this way if there is a folder for the episodes.
 			# This adds a "Play" button.
 			self.table_model.setItem(row_count, 4, button_play)
 			self.table_model.item(row_count, 4).setTextAlignment(Qt.AlignCenter)
@@ -550,7 +547,7 @@ class CreateShowInfoEpisodeTable(CreateShowEpisodeTable, QObject):
 			self.table_model.item(row_count, 5).setForeground(mark_button_color)
 			self.table_model.setItem(row_count, 6, QStandardItem(episode.value("episode_IMDB_id")))
 		else:
-			# Row made this they if there is no folder with show's title.
+			# Table's row made this they if there is no folder with show's title.
 			# "Play" button is not added to the row.
 			self.table_model.setItem(row_count, 4, mark_button)
 			self.table_model.item(row_count, 4).setTextAlignment(Qt.AlignCenter)
