@@ -159,7 +159,12 @@ class TabWidget(QWidget):
 
 	def open_update_watchlist_window(self):
 		self.update_watchlist = UpdateWatchlist()
-		self.update_watchlist.exec_()
+		result = self.update_watchlist.exec_()
+
+		if result == QDialog.accept:
+			# If user clicks "Ok" button, both tables in Tab1 will be refilled.
+			self.latest_episodes.refill_episode_table()
+			self.next_episodes.refill_episode_table()
 	
 	def open_settings_window(self):
 		self.settings_window = SettingsWindow()

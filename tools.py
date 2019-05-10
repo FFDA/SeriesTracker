@@ -4,9 +4,14 @@ import datetime
 import tarfile
 import re
 from os import listdir
+from time import sleep
+from imdbpie import Imdb
 
 from PyQt5.QtCore import QSettings, Qt, QStandardPaths, QDir
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLineEdit, QPushButton, QLabel, QCheckBox, QProgressBar, QGroupBox, QHBoxLayout, QFileDialog, QStyleFactory, QComboBox, QApplication, QTextEdit
+from PyQt5.QtSql import QSqlQuery
+
+from misc import check_if_input_contains_IMDB_id
 
 settings = QSettings("SeriesTracker", "SeriesTracker")
 
@@ -204,6 +209,7 @@ class UpdateWatchlist(QDialog):
 	
 	def __init__(self):
 		super(UpdateWatchlist, self).__init__()
+		self.imdb = Imdb()
 		self.initUI()
 
 	def initUI(self):
@@ -219,13 +225,15 @@ class UpdateWatchlist(QDialog):
 		###
 
 		### Text Edit window, that displays info for the user
-		self.text_edit_message = QTextEdit()
-		self.text_edit_message.setReadOnly(True)
+		self.info_box = QTextEdit()
+		self.info_box.setReadOnly(True)
 		###
 
 		### Progress_bars.
 		self.progress_bar_current = QProgressBar()
+		self.progress_bar_current.setMinimum(0)
 		self.progress_bar_overall = QProgressBar()
+		self.progress_bar_overall.setMinimum(0)
 		###
 
 		### Buttons for the layout
@@ -243,7 +251,7 @@ class UpdateWatchlist(QDialog):
 
 		### Adding items to layout
 		self.layout.addWidget(self.label_message, 0, 0, 1, 4)
-		self.layout.addWidget(self.text_edit_message, 1, 0, 3, 4)
+		self.layout.addWidget(self.info_box, 1, 0, 3, 4)
 		self.layout.addWidget(self.progress_bar_current, 4, 0, 1, 4)
 		self.layout.addWidget(self.progress_bar_overall, 5, 0, 1, 4)	
 		self.layout.addWidget(self.button_close, 6, 0, 1, 1)
@@ -255,12 +263,374 @@ class UpdateWatchlist(QDialog):
 		self.show()
 
 	def update_watchlist(self):
-		self.text_edit_message.append("This does nothing right now.")
-		
+		# Gets shows that have to be updated and passes to other functions.
+		# Takes care of progress_bar_overall.
 		
 		self.button_update.setEnabled(False)
 		self.button_close.setEnabled(False)
+
+		self.info_box.append("Starting to update Watchlist. This will take some time if there are a lot of shows.")
+		self.info_box.append("")
+		self.info_box.append("========================")
+
+		watchlist = QSqlQuery("SELECT * FROM shows WHERE finished_watching = 0") # Fetches watchlist from DB
+		watchlist.exec_()
+		
+		progress_count = 0
+
+		count = QSqlQuery("SELECT COUNT(*) FROM shows WHERE finished_watching = 0") # How many shows there are in wtachlist
+		count.exec_()
+		count.first()
+		watchlist_count = count.value(0)
+
+		### Setting up progress bars
+		self.progress_bar_overall.setMaximum(watchlist_count)
+		self.progress_bar_current.setMaximum(9)
+		###
+
+		while watchlist.next():
+			# Loops thought all the shows and updates show_info and last season. If show has unknown season it is updated too.
+			self.progress_bar_current.setValue(0)
+
+			self.IMDB_id = watchlist.value("IMDB_id")
+			self.title = watchlist.value("title")
+
+			self.info_box.append("")
+			self.info_box.append("Upadating {}".format(self.title))
+			
+			self.update_show_info(self.IMDB_id)
+
+			sleep(10) # Sleeping for 10 seconds as a protection agains IMDB's bot protection.
+
+			### Getting values again, because season count might have changed.
+			sql_get_show_info = QSqlQuery("SELECT * FROM shows WHERE IMDB_ID = '%s'" % self.IMDB_id) 
+			sql_get_show_info.exec_()
+			sql_get_show_info.first()
+
+			self.seasons = sql_get_show_info.value("seasons")
+			self.unknown_season = sql_get_show_info.value("unknown_season")
+			self.selected_season = self.seasons
+			###
+
+			self.update_season() # Innitiating last season update
+	
+			if self.unknown_season == 1:
+				# If there is an unknown season it is updated too.
+				self.selected_season = "Unknown"
+				self.update_season()
+
+			self.progress_bar_current.setValue(9)
+			self.info_box.append("========================")
+
+			progress_count += 1
+			self.progress_bar_overall.setValue(progress_count)
+		
 		self.button_ok.setEnabled(True)
+
+		self.info_box.append("")
+		self.info_box.append("Finished updating Watchlist.")
+
+### Code taken from show_info_update.py UpdateShowInfo class
+	def update_show_info(self, IMDB_id):
+		
+		something_updated_trigger = 0
+		fetched_finished_airing = 2 # Default value for finished_airing. It will be changed later on if it is detected that show finished airing.
+		
+		self.info_box.append("Starting updating show %s info. Please be patient" % self.title)
+			
+		# Retrieving show values that will be checked from the database.
+		sql_select_show = QSqlQuery("SELECT seasons, years_aired, running_time, finished_airing, unknown_season FROM shows WHERE IMDB_id = '%s'" % IMDB_id)
+		
+		sql_select_show.first()
+		
+		# Assingning show values that will be checked to variables
+		current_seasons = sql_select_show.value("seasons")
+		current_unknown_season = sql_select_show.value("unknown_season")
+		current_years_aired = sql_select_show.value("years_aired")
+		current_finished_airing = sql_select_show.value("finished_airing")
+		current_running_time = sql_select_show.value("running_time")
+		self.progress_bar_current.setValue(1)
+		
+		# Checking if there is at least one episode that belongs to Unknown season
+		sql_check_unknown_season_episode = QSqlQuery("SELECT EXISTS (SELECT * FROM %s WHERE season = '')" % IMDB_id)
+		sql_check_unknown_season_episode.first()
+		unknown_season_episode_exists = sql_check_unknown_season_episode.value(0)
+		self.progress_bar_current.setValue(2)		
+		
+		# Retrieving show values from IMDB
+		fetched_show_info_detailed = self.imdb.get_title_episodes_detailed(IMDB_id, 1)
+		
+		fetched_season_list = fetched_show_info_detailed["allSeasons"]
+		self.progress_bar_current.setValue(3)
+
+		if None in fetched_season_list:
+			fetched_seasons = len(fetched_season_list) - 1
+			fetched_unknown_season = 1
+		else:
+			fetched_seasons = len(fetched_season_list)
+			fetched_unknown_season = 0
+		
+		self.progress_bar_current.setValue(4)
+		
+		# Tries to get years when show started and finish airing.
+		# If it can't get a second year it means, that show is still airing. It's not always the case, but it best I can do.
+		# If finished_aird last year matches the start year it means that show aired just for one year.
+		show_info_auxiliary = self.imdb.get_title_auxiliary(IMDB_id) # Retrieving show's info from IMDB
+		show_start_year = show_info_auxiliary["seriesStartYear"]
+		try:
+			show_end_year = show_info_auxiliary["seriesEndYear"]
+		except KeyError:
+			show_end_year = ""
+			fetched_finished_airing = 1	
+		
+		self.progress_bar_current.setValue(5)
+		
+		fetched_running_time = self.get_running_time(fetched_show_info_detailed, show_info_auxiliary)
+		
+		# Setting years airing that will be inserted into database.
+		if show_start_year == show_end_year:
+			fetched_years_aired = show_start_year		
+		else:
+			fetched_years_aired = str(show_start_year) + " - " + str(show_end_year)
+		
+		self.progress_bar_current.setValue(6)
+		
+		if current_finished_airing != fetched_finished_airing or current_years_aired != fetched_years_aired:
+			# This if statement checks if years that show aired change on IMDB_id website by checking if it has one one or two years.
+			# If show has one year it makrs show as it still airing, if it has two dates it will be marked as finished airing.
+			# It also updates air dates in the database.
+			sql_update_years_and_finished = QSqlQuery("UPDATE shows SET finished_airing = {finished_airing}, years_aired = '{years_aired}' WHERE IMDB_id = '{show_id}'".format(finished_airing = fetched_finished_airing, years_aired = fetched_years_aired, show_id = IMDB_id))
+			sql_update_years_and_finished.exec_()
+			self.info_box.append("Updated years aired from {old_years_aired} to {new_years_aired} and changed show's airing status".format(old_years_aired = current_years_aired, new_years_aired = fetched_years_aired))
+			something_updated_trigger = 1
+		
+		if current_seasons != fetched_seasons:
+			# This if statament checks season count and if it changed season count will be updated.
+			sql_update_season = QSqlQuery("UPDATE shows SET seasons = {seasons} WHERE IMDB_ID = '{show_id}'".format(seasons = fetched_seasons, show_id = IMDB_id))
+			sql_update_season.exec_()
+			self.info_box.append("Updated season count from {old_season_count} to {new_season_count}. You should update show's seasons next".format(old_season_count = current_seasons, new_season_count = fetched_seasons))
+			something_updated_trigger = 1
+			
+		if current_running_time != fetched_running_time:
+			sql_update_running_time = QSqlQuery("UPDATE shows SET running_time = {running_time} WHERE IMDB_ID = '{show_id}'".format(running_time = fetched_running_time, show_id = IMDB_id))
+			sql_update_running_time.exec_()
+			self.info_box.append("Show's running time was changed from {old_running_time} to {new_running_time}".format(old_running_time = current_running_time, new_running_time = fetched_running_time))
+			something_updated_trigger = 1
+			
+		#This if statement tries to check if there is and Unknown season in database and IMDB, but not ignore if there is and episodes with unknown season.
+		if current_unknown_season != fetched_unknown_season and unknown_season_episode_exists == 1:
+			self.info_box.append("It appears that all episodes in 'Unknown' season where removed or updated")
+			self.info_box.append("You should update show's seasons")
+			something_updated_trigger = 1
+		elif current_unknown_season != fetched_unknown_season and unknown_season_episode_exists == 0:
+			unknown_season_toggle = QSqlQuery("UPDATE shows SET unknown_season = 1 WHERE IMDB_id = '%s'" % self.IMDB_id)
+			unknown_season_toggle.exec_()
+			self.info_box.append("'Unknown season was added to show's season list.")
+			self.info_box.append("You should update show's seasons")
+			something_updated_trigger = 1
+			
+		
+		self.progress_bar_current.setValue(7)
+
+		self.info_box.append("")
+		self.info_box.append("Finished updating %s info" % self.title)
+		if something_updated_trigger == 0:
+			self.info_box.append("Nothing was changed/updated")
+		self.info_box.append("")
+
+		self.progress_bar_current.setValue(8)
+
+	def get_running_time(self, fetched_show_info_detailed, show_info_auxiliary):
+		# Moved code that retrieves running time to this function, because there are a lot of nuance with it on IMDB side.
+		first_episode_imdb_id = check_if_input_contains_IMDB_id(fetched_show_info_detailed['episodes'][1]['id']) # This is needed because IMDB shows different running time for tvMiniSeries (full run) and tvSeries (just for an episode).
+			
+		episode_run_time = self.imdb.get_title(first_episode_imdb_id)
+		
+		if show_info_auxiliary['titleType'] == 'tvSeries':
+			# This if statement tries to get running_time for "normal" TV series.			
+			if "runningTimeInMinutes" in episode_run_time['base'] and episode_run_time['base']["runningTimeInMinutes"] <= 60:
+				return episode_run_time['base']["runningTimeInMinutes"]
+			elif "runningTimeInMinutes" in show_info_auxiliary:
+				return show_info_auxiliary["runningTimeInMinutes"]
+			else:
+				return 0
+		
+		else:
+			# This if statement tries to get running_time for "mini" TV Series			
+			if "runningTimeInMinutes" in episode_run_time['base']:
+				# This if tries to retrieve running_time from one of the episodes of the show.
+				return episode_run_time['base']["runningTimeInMinutes"]
+			elif "runningTimeInMinutes" in show_info_auxiliary:
+				# This one calculates episode runtime bu getting running time of all episode and dividing it by episode count
+				full_run_time = show_info_auxiliary["runningTimeInMinutes"]
+				episode_count = show_info_auxiliary["numberOfEpisodes"]
+				return full_run_time / episode_count
+			else:
+				# If everything fails it running time will be set as 0
+				return 0
+###
+
+### Taken from show_info_update.py UpdateSingleSeason class
+	def update_season(self):	
+		# This function needs self.title, self.selected_season, self.seasons, self.IMDB_id, self.unknown_season
+		
+		self.info_box.append("Updating {} Season {}".format(self.title, self.selected_season))
+		
+		# Because IMDB and my database uses different values for unknown season while retrieving it I have to assign two different values and use them accordingly.
+		if self.selected_season == "Unknown":
+			season_in_IMDB = int(self.seasons + self.unknown_season)
+			season_in_database = ""
+		else:
+			season_in_IMDB = int(self.selected_season)
+			season_in_database = int(self.selected_season)
+		
+		# Pattern for IMDB_id
+		pattern_to_look_for = re.compile("tt\d+")
+		# This labda should return just IMDB_id from given link
+		get_IMDB_id_lambda = lambda x: pattern_to_look_for.search(x)[0]
+		
+		# Getting detailed episode JSON file from IMDB using IMDBpie
+		detailed_season_episodes = self.imdb.get_title_episodes_detailed(self.IMDB_id, season_in_IMDB)
+		
+		# Setting counter to print a message to user how many files where updated.
+		updated_episode_count = 0
+		added_episode_count = 0
+		
+		# Looping though episode in JSON file, assinging variable name to data that will be updated or inserted in to database.
+		for episode in detailed_season_episodes['episodes']:
+			
+			fetched_episode_IMDB_id = get_IMDB_id_lambda(episode['id'])
+
+			# Selecting episode from the database using it's IMDB_id
+			episode_from_database = QSqlQuery("SELECT * FROM %s WHERE episode_IMDB_id = '%s'" % (self.IMDB_id, fetched_episode_IMDB_id))
+
+			# Asigning values fetched from IMDB to the variables.
+			fetched_episode_number = episode["episodeNumber"]
+			fetched_episode_year = episode["year"]
+			fetched_episode_title = episode["title"]
+			fetched_episode_air_date = episode["releaseDate"]["first"]["date"]
+			
+			if fetched_episode_number == None:
+				fetched_episode_number = ""		
+			if fetched_episode_year == None:
+				fetched_episode_year = ""
+			if fetched_episode_title == None:
+				fetched_episode_title = ""
+			if fetched_episode_air_date == None:
+				fetched_episode_air_date = ""
+
+			if fetched_episode_number != "" and season_in_database != "":
+				if season_in_IMDB <= 9:
+					new_episode_seasonal_id_season = "S0" + str(season_in_IMDB)
+				else:
+					new_episode_seasonal_id_season = "S" + str(season_in_IMDB)
+				if fetched_episode_number <= 9:
+					new_episode_seasonal_id_number = "E0" + str(fetched_episode_number)
+				else:
+					new_episode_seasonal_id_number = "E" + str(fetched_episode_number)
+					
+				fetched_episode_seasonal_id = new_episode_seasonal_id_season + new_episode_seasonal_id_number
+			else:
+				fetched_episode_seasonal_id = ""
+			
+			# Checking if episode anctually axists. If it does, variables names are assinged to it's information
+			if episode_from_database.first() != False:
+				
+				current_episode_season = episode_from_database.value("season")
+				current_episode_number = episode_from_database.value("episode")
+				current_episode_year = episode_from_database.value("episode_year")
+				current_episode_title = episode_from_database.value("episode_title")
+				current_episode_air_date = episode_from_database.value("air_date")
+				
+				# THIS PART DEALS WITH EXISTING EPISODES FROM KNOWN SEASONS!
+				# Checking if there is a difference between the fetched data from IMDB and database. If so data is formated and record is updated.
+				if self.selected_season != "Unknown":
+					if season_in_IMDB != season_in_database or current_episode_number != fetched_episode_number or current_episode_year != fetched_episode_year or current_episode_title != fetched_episode_title or current_episode_air_date != fetched_episode_air_date:
+						
+						# This sting uses two types of substitution. One is Python3 and the other one is provided py Qt5. 						
+						update_episode_string = "UPDATE {IMDB_id} SET season = :episode_season, episode = :episode_number, episode_seasonal_id = :episode_seasonal_id, episode_year = :episode_year, episode_title = :episode_title, air_date = :episode_air_date WHERE episode_IMDB_id = '{episode_IMDB_id}'".format(IMDB_id = self.IMDB_id, episode_IMDB_id = fetched_episode_IMDB_id)
+						sql_update_episode = QSqlQuery()
+						sql_update_episode.prepare(update_episode_string)
+						sql_update_episode.bindValue(":episode_season", season_in_database) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode season will make sql_query to fail.
+						sql_update_episode.bindValue(":episode_number", fetched_episode_number) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode numbers will make sql_query to fail.
+						sql_update_episode.bindValue(":episode_seasonal_id", fetched_episode_seasonal_id) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode_seasonal_id will make sql_query to fail.
+						sql_update_episode.bindValue(":episode_year", fetched_episode_year) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode year will make sql_query to fail.
+						sql_update_episode.bindValue(":episode_title", fetched_episode_title) # This substitutions is provided by Qt5 and is needed, becauase otherwise titles with quotes fill fail to be inserted into database.
+						sql_update_episode.bindValue(":episode_air_date", fetched_episode_air_date) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty air_date will make sql_query to fail.
+						sql_update_episode.exec_()
+						
+						# Setting updated episode counter +1 to print how many episodes where updated.
+						updated_episode_count += 1
+						self.info_box.append("Updated episode {episode_seasonal_id}:".format(episode_seasonal_id = fetched_episode_seasonal_id))
+						if current_episode_title != fetched_episode_title:
+							self.info_box.append("		Title: '{old_episode_title}' => '{new_episode_title}'".format(old_episode_title = current_episode_title, new_episode_title = fetched_episode_title))
+						if current_episode_air_date != fetched_episode_air_date:
+							self.info_box.append("		Air Date: '{old_air_date}' => '{new_air_date}'".format(old_air_date = current_episode_air_date, new_air_date = fetched_episode_air_date))
+				
+				# THIS PART DEALS WHITH EXISTING EPISODES FORM UNKNONW SEASON!
+				# The only difference between this and episode check above is that this one does not check for difference in seaosns, while still trying to add one.
+				else:
+					
+					if current_episode_number != fetched_episode_number or current_episode_year != fetched_episode_year or current_episode_title != fetched_episode_title or current_episode_air_date != fetched_episode_air_date:
+						
+						# Updating episode information
+						# This sting uses two types of substitution. One is Python3 and the other one is provided py Qt5.
+						update_episode_string = "UPDATE {IMDB_id} SET season = :episode_season, episode = :episode_number, episode_seasonal_id = :episode_seasonal_id, episode_year = :episode_year, episode_title = :episode_title, air_date = :episode_air_date WHERE episode_IMDB_id = '{episode_IMDB_id}'".format(IMDB_id = self.IMDB_id, episode_IMDB_id = fetched_episode_IMDB_id)
+						sql_update_episode = QSqlQuery()
+						sql_update_episode.prepare(update_episode_string)
+						sql_update_episode.bindValue(":episode_season", season_in_database) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode season will make sql_query to fail.
+						sql_update_episode.bindValue(":episode_number", fetched_episode_number) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode numbers will make sql_query to fail.
+						sql_update_episode.bindValue(":episode_seasonal_id", fetched_episode_seasonal_id) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode_seasonal_id will make sql_query to fail.
+						sql_update_episode.bindValue(":episode_year", fetched_episode_year) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode year will make sql_query to fail.
+						sql_update_episode.bindValue(":episode_title", fetched_episode_title) # This substitutions is provided by Qt5 and is needed, becauase otherwise titles with quotes fill fail to be inserted into database.
+						sql_update_episode.bindValue(":episode_air_date", fetched_episode_air_date) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty air_date will make sql_query to fail.
+						sql_update_episode.exec_()
+						
+						# Setting updated episode counter +1 to print how many episodes where updated.
+						updated_episode_count += 1
+						self.info_box.append("Updated episode {episode_seasonal_id}:".format(episode_seasonal_id = fetched_episode_seasonal_id))
+						if current_episode_title != fetched_episode_title:
+							self.info_box.append("		Title: '{old_episode_title}' => '{new_episode_title}'".format(old_episode_title = current_episode_title, new_episode_title = fetched_episode_title))
+						if current_episode_air_date != fetched_episode_air_date:
+							self.info_box.append("		Air Date: '{old_air_date}' => '{new_air_date}'".format(old_air_date = current_episode_air_date, new_air_date = fetched_episode_air_date))
+
+			# If episode does not exist in the database it is inserted in as a new record. The same steps are taken as in add new shows episodes in the add_show.py file.
+			# This part should work the same for the Normal and Unknown seasons. 
+			else:
+
+				# This sting uses two types of substitution. One is Python3 and the other one is provided py Qt5.
+				insert_episode_string = "INSERT INTO {IMDB_id} VALUES ({episode_watched}, :episode_season, :episode_number, :episode_IMDB_id, :episode_seasonal_id, :episode_year, :episode_title, :air_date)".format(IMDB_id = self.IMDB_id, episode_watched = 0)
+				
+				sql_insert_episode = QSqlQuery()
+				sql_insert_episode.prepare(insert_episode_string)
+				sql_insert_episode.bindValue(":episode_season", season_in_database) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode season will make sql_query to fail.
+				sql_insert_episode.bindValue(":episode_number", fetched_episode_number) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode numbers will make sql_query to fail.
+				sql_insert_episode.bindValue(":episode_IMDB_id", fetched_episode_IMDB_id) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode_IMDB_id will make sql_query to fail.
+				sql_insert_episode.bindValue(":episode_seasonal_id", fetched_episode_seasonal_id) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode_seasonal_id will make sql_query to fail.
+				sql_insert_episode.bindValue(":episode_year", fetched_episode_year) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty episode year will make sql_query to fail.
+				sql_insert_episode.bindValue(":episode_title", fetched_episode_title) # This substitutions is provided by Qt5 and is needed, becauase otherwise titles with quotes fill fail to be inserted into database.
+				sql_insert_episode.bindValue(":air_date", fetched_episode_air_date) # This substitutions is provided by Qt5 and is needed, becauase otherwise empty air_date will make sql_query to fail.					
+				sql_insert_episode.exec_()
+				
+				added_episode_count += 1
+				self.info_box.append("Added episode {} {}".format(fetched_episode_seasonal_id, fetched_episode_title))
+		
+		if self.unknown_season == 1:
+			# This statement checks if there are any episodes in "Unknown" season and if they are all updated removes "Unknown" season from list.
+			sql_check_unknown_season_episode = QSqlQuery("SELECT EXISTS (SELECT * FROM %s WHERE season = '')" % self.IMDB_id)
+			sql_check_unknown_season_episode.first()
+			unknown_season_episode_exists = sql_check_unknown_season_episode.value(0)
+			if unknown_season_episode_exists == 0:
+				unknown_season_toggle = QSqlQuery("UPDATE shows SET unknown_season = 0 WHERE IMDB_id = '%s'" % self.IMDB_id)
+				unknown_season_toggle.exec_()
+				
+		self.info_box.append("")
+		self.info_box.append("Finished updating season {} of {}".format(self.selected_season, self.title))
+		self.info_box.append("Updated {} episodes".format(updated_episode_count))
+		self.info_box.append("Added {} episodes".format(added_episode_count))
+		self.info_box.append("")
+
+###
 
 class SettingsWindow(QDialog):
 
