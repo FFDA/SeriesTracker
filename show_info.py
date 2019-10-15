@@ -47,8 +47,8 @@ class OpenShowWindow(QWidget):
 		# Checks if there is a folder with the same name as show title in set directory
 		episode_list = dict() # Default value is empty dictionary to mark that there isn't such folder.
 		for title in listdir(settings.value("videoDir")):
-			if re.sub(" ", ".", self.title) == re.sub(" ", ".", title)[:len(self.title)]: # This part detects the folder that starts with the same words as show's title.
-				episode_list["path"] = settings.value("videoDir") + QDir.separator() + self.title + QDir.separator() # Adds full path to the folder with all episodes the dictionary.
+			if re.sub(" ", ".", self.title.lower()) == re.sub(" ", ".", title.lower())[:len(self.title)]: # This part detects the folder that starts with the same words as show's title.
+				episode_list["path"] = settings.value("videoDir") + QDir.separator() + title + QDir.separator() # Adds full path to the folder with all episodes the dictionary.
 				# If folder is found. Every seasonal_episode_id that is found is added to dictionary.
 				for file_name in listdir(settings.value("videoDir") + QDir.separator() + title):
 					episode_seasonal_id = get_seasonal_id(file_name) # This function is in misc.py
