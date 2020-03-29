@@ -239,11 +239,12 @@ class OpenShowWindow(QWidget):
 		
 		season_button_label = QLabel("Season")
 
-		# Button that opens show's IMDB page
-		open_webpage = QPushButton("Open IMDB page")
-		open_webpage.setFocusPolicy(Qt.NoFocus)
-		open_webpage.clicked.connect(self.open_imdb_page)
-		open_webpage.setMinimumSize(150, 31)
+		# Creates button menu for "Open ..." button
+		open_button_menu = QMenu()
+		open_button_menu.addAction("IMDB page", self.open_imdb_page)
+		open_button_menu.addAction("search in rarbg", self.open_rarbg_search)
+		open_button_menu.addAction("search in 1337x", self.open_1337x_search)
+		open_button_menu.addAction("search in torrentz2", self.open_torrentz2_search)
 				
 		# Creates button menu for "Mark ..." button
 		mark_as_button_menu = QMenu()
@@ -277,6 +278,10 @@ class OpenShowWindow(QWidget):
 		manage_button.setFocusPolicy(Qt.NoFocus)
 		manage_button.setMenu(manage_button_menu)
 		manage_button.setMinimumSize(150, 31)
+		open_button = QPushButton("Open ...")
+		open_button.setFocusPolicy(Qt.NoFocus)
+		open_button.setMenu(open_button_menu)
+		open_button.setMinimumSize(150, 31)
 
 		self.button_box.layout.addWidget(season_button_label)
 		self.button_box.layout.addWidget(self.season_button)
@@ -284,12 +289,12 @@ class OpenShowWindow(QWidget):
 		self.button_box.layout.addWidget(mark_as_button)
 		self.button_box.layout.addWidget(update_button)
 		self.button_box.layout.addWidget(manage_button)
-		self.button_box.layout.addWidget(open_webpage)
+		self.button_box.layout.addWidget(open_button)
 
 		self.button_box.setLayout(self.button_box.layout)
 		
 	def open_imdb_page(self):
-		# This function opens shows Webpage
+		# This function opens shows IMDB webpage
 		
 		if has_internet_connection() == False:
 			MessagePrompt("Please connect to internet").exec_() # This class is defined in misc.py
@@ -297,7 +302,38 @@ class OpenShowWindow(QWidget):
 		else:
 			imdb_url = "https://www.imdb.com/title/" + self.IMDB_id + "/"
 			webbrowser.open(imdb_url, new=2, autoraise=True)
+
+	def open_rarbg_search(self):
+		# This function open search for the show in rarbg torrent site.
+
+		if has_internet_connection() == False:
+			MessagePrompt("Please connect to internet").exec_() # This class is defined in misc.py
+			return
+		else:
+			rardb_url = "https://rarbg2020.org/torrents.php?imdb=" + self.IMDB_id
+			webbrowser.open(rardb_url, new=2, autoraise=True)
+			return
 	
+	def open_1337x_search(self):
+		# This function open search for the show in 1337x torrent site.
+		if has_internet_connection() == False:
+			MessagePrompt("Please connect to internet").exec_() # This class is defined in misc.py
+			return
+		else:
+			x1337_url = "https://1337x.to/search/" + re.sub("\W+", "+", self.title) + "/1/"
+			webbrowser.open(x1337_url, new=2, autoraise=True)
+			return
+
+	def open_torrentz2_search(self):
+		# This function open search for the show in torrentz2 torrent site.
+		if has_internet_connection() == False:
+			MessagePrompt("Please connect to internet").exec_() # This class is defined in misc.py
+			return
+		else:
+			torrentz2_url = "https://torrentz2.eu/search?f=" + re.sub("\W+", "+", self.title)
+			webbrowser.open(torrentz2_url, new=2, autoraise=True)
+			return
+
 	def print_season(self, season):
 		# This function set new SQL query to fetch episodes from the database. 
 		# Query is set after getting a signal from dropdown menu in create_buttons() function.
