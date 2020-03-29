@@ -98,7 +98,7 @@ class OpenShowWindow(QWidget):
 		self.show_info_box.layout = QGridLayout()
 
 		info_box = QGroupBox() # Group box containing Show's info
-		info_box.layout = QVBoxLayout()
+		info_box.layout = QGridLayout()
 		info_box.setMinimumSize(700, 300)
 		 
 		font_title = QFont() # Font size for title
@@ -116,6 +116,9 @@ class OpenShowWindow(QWidget):
 		
 		self.label_years_aired = QLabel()
 		self.label_years_aired.setFont(font_other)
+
+		self.label_genres = QLabel()
+		self.label_genres.setFont(font_other)
 
 		self.label_running_time = QLabel()
 		self.label_running_time.setFont(font_other)
@@ -135,6 +138,7 @@ class OpenShowWindow(QWidget):
 		
 		info_box.layout.addWidget(self.label_title)
 		info_box.layout.addWidget(self.label_years_aired)
+		info_box.layout.addWidget(self.label_genres)
 		info_box.layout.addWidget(self.label_running_time)
 		info_box.layout.addWidget(self.label_seasons)
 		info_box.layout.addWidget(self.label_watched_time)
@@ -152,6 +156,7 @@ class OpenShowWindow(QWidget):
 	def fill_show_info_box(self):
 		self.label_title.setText(self.title)
 		self.label_years_aired.setText("Years aired: " + self.years_aired)
+		self.label_genres.setText("Genres: " + self.genres)
 		self.label_running_time.setText("Episode runtime: " + str(self.running_time) + " minutes")
 		self.label_seasons.setText(str(self.seasons) + " season(s)")
 		
