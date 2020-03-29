@@ -98,6 +98,7 @@ class AddShow(QDialog):
 				self.add_show(checked_user_input)				
 			else:
 				self.info_box.append("Show already exists in database") # Prints a message that show is already in database
+				self.button_ok.setDisabled(False)
 		else:
 			self.info_box.append("Couldn't find IMDB_id")
 		
