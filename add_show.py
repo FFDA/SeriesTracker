@@ -95,12 +95,16 @@ class AddShow(QDialog):
 			sql_check_if_exists.first()
 			if sql_check_if_exists.value(0) == 0: # Starts adding the show
 				self.info_box.append("Starting to add the show")
-				self.add_show(checked_user_input)				
+				self.add_show(checked_user_input)
 			else:
+				self.info_box.setTextColor(Qt.red)
 				self.info_box.append("Show already exists in database") # Prints a message that show is already in database
+				self.info_box.setTextColor(Qt.black)
 				self.button_ok.setDisabled(False)
 		else:
+			self.info_box.setTextColor(Qt.red)
 			self.info_box.append("Couldn't find IMDB_id")
+			self.info_box.setTextColor(Qt.black)
 		
 		self.IMDB_id_input.clear()
 		self.IMDB_id_input.setReadOnly(False)
@@ -118,8 +122,10 @@ class AddShow(QDialog):
 		
 		# Checks if user tries to add movie instead if the show. And cancels proccess if he/she is.
 		if show_info["titleType"] == "movie":
+			self.info_box.setTextColor(Qt.red)
 			self.info_box.append("You provided IMDB ID of a movie.")
 			self.info_box.append("It will not be added to database.")
+			self.info_box.setTextColor(Qt.black)
 			return
 		
 		title = show_info["title"]
