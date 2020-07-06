@@ -31,8 +31,8 @@ pattern_to_look_for = re.compile("tt\d+")
 # This function checks user input and returns False if does not contain IMDB_id or returns string with IMDB_id if it does.
 def check_if_input_contains_IMDB_id(user_input):
     if pattern_to_look_for.search(user_input):
-        if len(pattern_to_look_for.search(user_input)[0]) == 9:
-            return pattern_to_look_for.search(user_input)[0]
+        #if len(pattern_to_look_for.search(user_input)[0]) == 9: # Commented out this line, because some of the episodes (not shows) has more then 7 digits in them.
+        return pattern_to_look_for.search(user_input)[0]
     else:
         return False
 
