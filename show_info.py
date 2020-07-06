@@ -4,7 +4,6 @@
 
 # Python3 imports
 import webbrowser
-from urllib import request
 from os import listdir
 import re
 
@@ -203,18 +202,11 @@ class OpenShowWindow(QWidget):
 		self.cover_box.setLayout(self.cover_box.layout)
 		
 	def download_cover(self):
-		# Downloads cover for a show and displays it.
-		if has_internet_connection() == False:
-			MessagePrompt("Please connect to internet").exec_() # This class is defined in misc.py
-			return
-		else:
-			path_to_cover = settings.value("coverDir") + self.IMDB_id + ".jpg"
-			
-			with open(path_to_cover, "bw") as f:
-				f.write(request.urlopen(self.image).read())
-
-			f.close()
-			
+		# Downloads cover for a show and displays it. It uses function with the same name from AddShow class/file.
+		from add_show import AddShow
+		add_show = AddShow()
+		if add_show.download_cover(self.IMDB_id, self.image) == True:
+		
 			self.cover_box.layout.removeWidget(self.cover_box.button) # Removes botton from cover box.
 			self.create_cover_box() # Recreates cover box
 		

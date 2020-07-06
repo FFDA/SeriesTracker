@@ -1,12 +1,15 @@
 #! /usr/bin/python3
 
-from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QComboBox, QTextEdit, QProgressBar, QPushButton, QLineEdit
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QComboBox, QTextEdit, QProgressBar, QPushButton, QLineEdit, QCheckBox
+from PyQt5.QtCore import Qt, QSettings
 from PyQt5.QtSql import QSqlQuery
 
 from imdbpie import Imdb
+from urllib import request # Needed to download covers
 import re
-from misc import center, check_if_input_contains_IMDB_id
+from misc import center, check_if_input_contains_IMDB_id, has_internet_connection
+
+settings = QSettings("SeriesTracker", "SeriesTracker")
  
 class AddShow(QDialog):
 	 
@@ -31,10 +34,18 @@ class AddShow(QDialog):
 		self.IMDB_id_input.textChanged.connect(self.IMDB_id_input_management)
 		
 		self.combo_box_label = QLabel("Add to:")
+		# self.combo_box_label.setAlignment(Qt.AlignRight)
 		self.combo_box_list = ["Watchlist", "Finished Watching", "Plan to Watch"]
 		self.combo_box = QComboBox()
 		self.combo_box.addItems(self.combo_box_list)
 		self.combo_box.setCurrentIndex(2) # Setting combo box index to make "Plan to Watch" as default option.
+
+		# This checkbox initiates with status from settings. It can be changed for this current windown, but it will not be saved to the settings file and value will be restored from settings file next time window will be opened. To change this value user has to go to tools > settings.
+		self.download_cover_checkbox = QCheckBox("Download Cover")
+		if int(settings.value("downloadCovers")):
+			self.download_cover_checkbox.setCheckState(Qt.Checked)
+		else:
+			self.download_cover_checkbox.setCheckState(Qt.Unchecked)
 
 		self.info_box = QTextEdit()
 		self.info_box.setReadOnly(True)
@@ -54,8 +65,9 @@ class AddShow(QDialog):
 		
 		self.layout.addWidget(self.message, 0, 0, 1, 4)
 		self.layout.addWidget(self.IMDB_id_input, 1, 0, 1, 4)
-		self.layout.addWidget(self.combo_box_label, 2, 1, 1, 1)
-		self.layout.addWidget(self.combo_box, 2, 2, 1, 1)
+		self.layout.addWidget(self.combo_box_label, 2, 0, 1, 1)
+		self.layout.addWidget(self.combo_box, 2, 1, 1, 1)
+		self.layout.addWidget(self.download_cover_checkbox, 2, 3, 1, 1)
 		self.layout.addWidget(self.info_box, 3, 0, 4, 4)
 		self.layout.addWidget(self.progress_bar, 8, 0, 1, 4)
 		self.layout.addWidget(self.button_cancel, 9, 0, 1, 1)
@@ -88,7 +100,7 @@ class AddShow(QDialog):
 		user_input = self.IMDB_id_input.text()
 		checked_user_input = check_if_input_contains_IMDB_id(user_input) # Checks if input contains IMDB_id
 		
-		if checked_user_input != False: # USer input has IMDB_id in it
+		if checked_user_input != False: # User input has IMDB_id in it
 			
 			self.info_box.append("Adding show with IMDB_id: " + checked_user_input)
 			sql_check_if_exists = QSqlQuery("SELECT EXISTS (SELECT * FROM shows WHERE IMDB_id = '%s')" % checked_user_input) # SqlQuery to check if show is in database.
@@ -327,6 +339,13 @@ class AddShow(QDialog):
 			progress_bar_value += 1
 			self.progress_bar.setValue(progress_bar_value)
 		
+		## This if statement checks if user wants to download cover for the show. If so it tells user that it is downloading the cover and initiantes download_cover function. Otherwise nothing message is printed that tell that user will have to do it manually from show_info window.
+		if self.download_cover_checkbox.isChecked():
+			self.info_box.append("Downloading show's cover image.")
+			self.download_cover(IMDB_id, image)
+		else:
+			self.info_box.append("Skipped download of the show's cover image. That will still be possible to do from Shows Info window.")
+		
 		self.info_box.append("Finished adding show.")
 		self.info_box.append("Total episodes: {}".format(added_episode_count))
 		
@@ -360,3 +379,19 @@ class AddShow(QDialog):
 			else:
 				# If everything fails it running time will be set as 0
 				return 0
+
+	def download_cover(self, IMDB_id, image):
+		## Checks if there is an internet connection. Returns false if not.
+		## Then tries to download show cover with image(url) passed to the program.
+		if has_internet_connection() == False:
+			MessagePrompt("Please connect to internet").exec_() # This class is defined in misc.py
+			return False
+		else:
+			path_to_cover = settings.value("coverDir") + IMDB_id + ".jpg"
+			
+			with open(path_to_cover, "bw") as f:
+				f.write(request.urlopen(image).read())
+
+			f.close()
+			return True
+			

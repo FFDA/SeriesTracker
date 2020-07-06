@@ -46,6 +46,7 @@ def init_settings():
 	settings.setValue("height", 800)
 	settings.setValue("coverDir", cover_folder)
 	settings.setValue("currentStyle", QApplication.style().objectName())
+	settings.setValue("downloadCovers", 0)
 	
 	QDir().mkpath(settings.value("coverDir")) # Creates a path to cover folder
 

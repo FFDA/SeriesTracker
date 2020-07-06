@@ -162,8 +162,6 @@ class RestoreWindow(QDialog):
 		
 		self.setLayout(self.layout)
 		self.show()
-		
-		print()
 
 	def choose_restore_file(self):
 		# Display a dialog box to user to choose a location where backup file will be saved.
@@ -679,6 +677,22 @@ class SettingsWindow(QDialog):
 		box_playback.layout.addWidget(button_playback_choose, 1, 5, 1, 1)
 		box_playback.setLayout(box_playback.layout)
 
+		### Creating layout for "Misc" portion of the settings
+		
+		##	This creates a checkbox for user to choose if he/she want's to auto download covers.
+		## 	Check box'es value is saved in settngs and default value is unchecked.
+		self.cover_checkbox = QCheckBox("Auto-download Covers")
+		if int(settings.value("downloadCovers")) == 0:
+			self.cover_checkbox.setCheckState(Qt.Unchecked)
+		else:
+			self.cover_checkbox.setCheckState(Qt.Checked)
+		self.cover_checkbox.stateChanged.connect(self.auto_download_covers)
+		
+		box_covers = QGroupBox("Misc")
+		box_covers.layout = QHBoxLayout()
+		box_covers.layout.addWidget(self.cover_checkbox)
+		box_covers.setLayout(box_covers.layout)
+
 		### Main buttons and other layout stuff
 		self.button_cancel = QPushButton("Cancel")
 		self.button_cancel.setFocusPolicy(Qt.NoFocus)
@@ -693,9 +707,10 @@ class SettingsWindow(QDialog):
 
 		self.layout.addWidget(box_style, 0, 0, 1, 6)
 		self.layout.addWidget(box_playback, 1, 0, 2, 6)
-		self.layout.addWidget(self.button_cancel, 4, 0, 1, 1)
-		self.layout.addWidget(self.button_apply, 4, 4, 1, 1)
-		self.layout.addWidget(self.button_ok, 4, 5, 1, 1)
+		self.layout.addWidget(box_covers, 3, 0, 1, 6)
+		self.layout.addWidget(self.button_cancel, 6, 0, 1, 1)
+		self.layout.addWidget(self.button_apply, 6, 4, 1, 1)
+		self.layout.addWidget(self.button_ok, 6, 5, 1, 1)
 		self.setLayout(self.layout)
 		self.show()
 
@@ -716,14 +731,34 @@ class SettingsWindow(QDialog):
 			self.playback_line_edit.setText(video_dir)
 			self.button_apply.setEnabled(True)
 	
+	def auto_download_covers(self):
+		## Checks if checkbox's status matches the one that is saved in settings.
+		## If it doesn't "apply" button will be enabled
+		
+		if int(settings.value("downloadCovers")) != self.cover_checkbox.isChecked():
+			# Compares current values of cover_checkbox and settings file's downloadCovers and sets "Apply" button status appropriately.
+			self.button_apply.setEnabled(True)
+		else:
+			self.button_apply.setEnabled(False)
+
 	def apply_changes(self):
+		
+		# Changes style and saves it to settings
 		if settings.value("currentStyle") != self.combo_box_style.currentText():
-			# Changes style and saves it to settings
 			QApplication.setStyle(self.combo_box_style.currentText())
 			settings.setValue("currentStyle", self.combo_box_style.currentText())
-		if settings.value("videoDir") != self.playback_line_edit.text():
-			# Saves chosen dir to settings
+		
+		# Saves chosen dir to settings
+		if settings.value("videoDir") != self.playback_line_edit.text():	
 			settings.setValue("videoDir", self.playback_line_edit.text())
+		
+		# Saves cover_checkbox value to settings
+		if self.cover_checkbox.isChecked(): # Gets state of the cover_checkbox and assigns it a number 0 or 1 depending of that state for easier comparison.
+			current_cover_checkbox_state = 1
+		else:
+			current_cover_checkbox_state = 0
+		if settings.value("downloadCovers") != current_cover_checkbox_state:
+			settings.setValue("downloadCovers", current_cover_checkbox_state)
 		
 		self.button_apply.setEnabled(False) # Disables "Apply" button.
 		
