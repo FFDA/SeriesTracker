@@ -173,7 +173,7 @@ class AddShow(QDialog):
 			show_end_year = ""
 			finished_airing = 1	
 		
-		fetched_show_info_detailed = fetched_show_info_detailed = self.imdb.get_title_episodes_detailed(IMDB_id, 1)
+		fetched_show_info_detailed = self.imdb.get_title_episodes_detailed(IMDB_id, 1)
 		running_time = self.get_running_time(fetched_show_info_detailed, show_info)
 		
 		# Setting years airing that will be inserted into database.
