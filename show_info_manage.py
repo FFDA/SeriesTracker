@@ -1,11 +1,15 @@
 #! /usr/bin/python3
 
+from os import path, remove
+
 from imdbpie import Imdb
 from misc import center, check_if_input_contains_IMDB_id, row_backgound_color
 
 from PyQt5.QtWidgets import QDialog, QPushButton, QProgressBar, QComboBox, QLabel, QProgressBar, QGridLayout, QTextEdit
 from PyQt5.QtSql import QSqlQuery
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSettings
+
+settings = QSettings("SeriesTracker", "SeriesTracker")
 
 class FixSeason(QDialog):
 	
@@ -265,10 +269,14 @@ class DeleteShow(QDialog):
 		self.show()
 		
 	def delete_show(self):
-		
+		## Removes show from the database
 		sql_delete_show_from_shows_table = QSqlQuery("DELETE FROM shows WHERE IMDB_id = '%s'" % self.IMDB_id)
 		sql_delete_show_from_shows_table.exec_()
 		
 		sql_delete_show_table = QSqlQuery("DROP TABLE %s" % self.IMDB_id)
 		sql_delete_show_table.exec_()
 		self.accept()
+
+		## Deletes cover file if it exists
+		if path.exists(settings.value("coverDir") + self.IMDB_id + ".jpg"):
+			remove(settings.value("coverDir") + self.IMDB_id + ".jpg")
