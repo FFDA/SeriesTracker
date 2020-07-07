@@ -726,7 +726,7 @@ class SettingsWindow(QDialog):
 		# Displays a window for user to choose a directory where (s)he keeps shows.
 		location_home = QStandardPaths.standardLocations(QStandardPaths.HomeLocation)[0]
 		video_dir = QFileDialog.getExistingDirectory(self, "Choose directory", location_home)
-		if video_dir != "": # If user cancels window instead of choosing a catalog dialog window returns empty sting. In that case nothing happens.
+		if video_dir != "": # If user cancels window instead of choosing a catalog dialog window returns empty string. In that case nothing happens.
 			# Set path to chosen directory to the line_edit and enabled apply button.
 			self.playback_line_edit.setText(video_dir)
 			self.button_apply.setEnabled(True)

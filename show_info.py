@@ -217,7 +217,6 @@ class OpenShowWindow(QWidget):
 					# This exception tries to mitigate program crashing when show's cover image link is broken.
 					f.write(request.urlopen(self.image).read())
 				except error.HTTPError:
-					print("Couldn't download a cover. Broken link.") # This has to be deleted after finishing fixind this bug.
 					# Setting up for getting a new link, and inserting it to the database.
 					from imdbpie import Imdb
 					from PyQt5.QtSql import QSqlQuery
