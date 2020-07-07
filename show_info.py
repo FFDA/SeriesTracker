@@ -5,7 +5,7 @@
 # Python3 imports
 import webbrowser
 from os import listdir
-from urllib import request
+from urllib import request, error
 import re
 
 # PyQt5 imports
@@ -212,9 +212,32 @@ class OpenShowWindow(QWidget):
 			path_to_cover = settings.value("coverDir") + self.IMDB_id + ".jpg"
 
 			with open(path_to_cover, "bw") as f:
-				f.write(request.urlopen(self.image).read())
+				
+				try:
+					# This exception tries to mitigate program crashing when show's cover image link is broken.
+					f.write(request.urlopen(self.image).read())
+				except error.HTTPError:
+					print("Couldn't download a cover. Broken link.") # This has to be deleted after finishing fixind this bug.
+					# Setting up for getting a new link, and inserting it to the database.
+					from imdbpie import Imdb
+					from PyQt5.QtSql import QSqlQuery
+					imdb = Imdb()
+					sql_update_image = QSqlQuery()
+
+					# Getting new image link
+					show_info = imdb.get_title(self.IMDB_id)
+					new_image = show_info['base']['image']['url']
+
+					# Adding new link to the database.
+					sql_update_image_string = "UPDATE shows SET image = :new_image WHERE IMDB_id = :IMDB_id"
+					sql_update_image.prepare(sql_update_image_string)
+					sql_update_image.bindValue(":new_image", new_image)
+					sql_update_image.bindValue(":IMDB_id", self.IMDB_id)
+					sql_update_image.exec_()
 
 			f.close()
+			self.cover_box.layout.removeWidget(self.cover_box.button) # Removes botton from cover box.
+			self.create_cover_box() # Recreates cover box
 			return True
 		
 	def create_buttons(self):
