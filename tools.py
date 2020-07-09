@@ -1,4 +1,4 @@
-#! /usr/bin/python3
+#! /usr/bin/python
 
 import datetime
 import tarfile
@@ -23,7 +23,7 @@ class BackupWindow(QDialog):
 	def __init__(self):
 		super(BackupWindow, self).__init__()
 		self.initUI()
-		
+	
 	def initUI(self):
 		self.resize(600, 200)
 		self.setModal(True)
@@ -651,7 +651,7 @@ class SettingsWindow(QDialog):
 		self.combo_box_style.setFocusPolicy(Qt.NoFocus)
 		self.combo_box_style.addItems(self.style_list)
 		self.combo_box_style.setCurrentText(settings.value("currentStyle")) # Setting combo box value to the value that is saved in settings.
-		self.combo_box_style.currentTextChanged.connect(self.change_style)
+		self.combo_box_style.currentTextChanged.connect(self.apply_button_status)
 		box_style.layout.addWidget(self.combo_box_style)
 		box_style.setLayout(box_style.layout)
 
@@ -661,9 +661,11 @@ class SettingsWindow(QDialog):
 		playback_message.setAlignment(Qt.AlignHCenter)
 		self.playback_line_edit = QLineEdit()
 		self.playback_line_edit.setReadOnly(True)
+		self.video_dir = "" # Empty string for videoDir variable that it could be compared even if user do not select anything. It will be changed if there is one saved in settings or user selects a new one later.
 		if settings.contains("videoDir"):
 			# If settings has a value for videoDir path to that dir will be set in to the line_edit
 			self.playback_line_edit.setText(settings.value("videoDir"))
+			self.video_dir = settings.value("videoDir")
 		self.playback_line_edit.setPlaceholderText("Choose root folder of all shows")
 		button_playback_choose = QPushButton("Choose")
 		button_playback_choose.setFocusPolicy(Qt.NoFocus)
@@ -686,7 +688,7 @@ class SettingsWindow(QDialog):
 			self.cover_checkbox.setCheckState(Qt.Unchecked)
 		else:
 			self.cover_checkbox.setCheckState(Qt.Checked)
-		self.cover_checkbox.stateChanged.connect(self.auto_download_covers)
+		self.cover_checkbox.stateChanged.connect(self.apply_button_status)
 		
 		box_covers = QGroupBox("Misc")
 		box_covers.layout = QHBoxLayout()
@@ -714,10 +716,8 @@ class SettingsWindow(QDialog):
 		self.setLayout(self.layout)
 		self.show()
 
-	def change_style(self, style):
-		# Simply checks if selected style maches with the current one.
-		# If it doesn't enables "Apply" button.
-		if style != settings.value("currentStyle"):
+	def apply_button_status(self):
+		if self.combo_box_style.currentText() != settings.value("currentStyle") or self.video_dir != settings.value("videoDir") or int(settings.value("downloadCovers")) != self.cover_checkbox.isChecked():
 			self.button_apply.setEnabled(True)
 		else:
 			self.button_apply.setEnabled(False)
@@ -725,21 +725,11 @@ class SettingsWindow(QDialog):
 	def choose_video_directory(self):
 		# Displays a window for user to choose a directory where (s)he keeps shows.
 		location_home = QStandardPaths.standardLocations(QStandardPaths.HomeLocation)[0]
-		video_dir = QFileDialog.getExistingDirectory(self, "Choose directory", location_home)
-		if video_dir != "": # If user cancels window instead of choosing a catalog dialog window returns empty string. In that case nothing happens.
-			# Set path to chosen directory to the line_edit and enabled apply button.
-			self.playback_line_edit.setText(video_dir)
-			self.button_apply.setEnabled(True)
-	
-	def auto_download_covers(self):
-		## Checks if checkbox's status matches the one that is saved in settings.
-		## If it doesn't "apply" button will be enabled
-		
-		if int(settings.value("downloadCovers")) != self.cover_checkbox.isChecked():
-			# Compares current values of cover_checkbox and settings file's downloadCovers and sets "Apply" button status appropriately.
-			self.button_apply.setEnabled(True)
-		else:
-			self.button_apply.setEnabled(False)
+		self.video_dir = QFileDialog.getExistingDirectory(self, "Choose directory", location_home)
+		if self.video_dir != "": # If user cancels window instead of choosing a catalog dialog window returns empty string. In that case nothing happens.
+			# Set path to chosen directory to the line_edit and activates a function to check if user chose a different directory.
+			self.playback_line_edit.setText(self.video_dir)
+			self.apply_button_status()
 
 	def apply_changes(self):
 		
