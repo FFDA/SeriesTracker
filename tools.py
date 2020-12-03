@@ -10,6 +10,7 @@ from imdbpie import Imdb
 from PyQt5.QtCore import QSettings, Qt, QStandardPaths, QDir
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLineEdit, QPushButton, QLabel, QCheckBox, QProgressBar, QGroupBox, QHBoxLayout, QFileDialog, QStyleFactory, QComboBox, QApplication, QTextEdit
 from PyQt5.QtSql import QSqlQuery
+from PyQt5.QtGui import QColor
 
 from misc import check_if_input_contains_IMDB_id
 
@@ -370,7 +371,7 @@ class UpdateWatchlist(QDialog):
 		
 		self.progress_bar_current.setValue(4)
 		
-		# Tries to get years when show started and finish airing.
+		# Tries to get years when show started and finished airing.
 		# If it can't get a second year it means, that show is still airing. It's not always the case, but it best I can do.
 		# If finished_aird last year matches the start year it means that show aired just for one year.
 		show_info_auxiliary = self.imdb.get_title_auxiliary(IMDB_id) # Retrieving show's info from IMDB
@@ -471,6 +472,10 @@ class UpdateWatchlist(QDialog):
 ### Taken from show_info_update.py UpdateSingleSeason class
 	def update_season(self):	
 		# This function needs self.title, self.selected_season, self.seasons, self.IMDB_id, self.unknown_season
+
+		# Colors for QTextEdit messages that show how many episodes where updated or added
+		background_important = QColor.fromRgb(142,186,67)
+		background_normal = QColor.fromRgb(255,255,255)
 		
 		self.info_box.append("Updating {} Season {}".format(self.title, self.selected_season))
 		
@@ -624,8 +629,19 @@ class UpdateWatchlist(QDialog):
 				
 		self.info_box.append("")
 		self.info_box.append("Finished updating season {} of {}".format(self.selected_season, self.title))
-		self.info_box.append("Updated {} episodes".format(updated_episode_count))
-		self.info_box.append("Added {} episodes".format(added_episode_count))
+		if updated_episode_count > 0:
+			self.info_box.setTextBackgroundColor(background_important)
+			self.info_box.append("Updated {} episodes".format(updated_episode_count))
+			self.info_box.setTextBackgroundColor(background_normal)
+		else:
+			self.info_box.append("Updated {} episodes".format(updated_episode_count))
+			
+		if added_episode_count > 0:
+			self.info_box.setTextBackgroundColor(background_important)
+			self.info_box.append("Added {} episodes".format(added_episode_count))
+			self.info_box.setTextBackgroundColor(background_normal)
+		else:
+			self.info_box.append("Added {} episodes".format(added_episode_count))
 		self.info_box.append("")
 
 ###
