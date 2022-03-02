@@ -106,6 +106,11 @@ def row_backgound_color(air_date, episode_state):
 		# If episode checked as watched it is always has blue background
 		return blue
 
+def check_extension_for_video(extension):
+	# Checks if extension of the file is in the list. Returns True or False.
+	# I don't know why I moved it here and did not kept it in the show_info.py
+	extension_list = ["mkv", "avi", "mp4"]
+	return extension in extension_list
 			
 class MessagePrompt(QDialog):
 	# Prompts user with a message that is passed to this class.
