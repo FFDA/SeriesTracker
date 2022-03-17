@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=SeriesTracker
+Version=v1.2
+Icon=SeriesTracker
+Exec=python3 /path/to/py/file/main.py
+Terminal=false
+Type=Application
