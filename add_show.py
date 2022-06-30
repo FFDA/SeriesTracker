@@ -141,7 +141,12 @@ class AddShow(QDialog):
 			return
 		
 		title = show_info["title"]
-		image = show_info["image"]["url"]
+		
+		# Tries to get url for an image that will be downloaded later as a Series cover
+		try:
+			image = show_info["image"]["url"]
+		except KeyError:
+			image = ""
 		
 		# Tries to get summary of the show. Only one show right now does not have a summary: tt1288814
 		try:
@@ -178,7 +183,11 @@ class AddShow(QDialog):
 		# Tries to get years when show started and finish airing.
 		# If it can't get a second year it means, that show is still airing. It's not always the case, but it best I can do.
 		# If finished_aird last year matches the start year it means that show aired just for one year.
-		show_start_year = show_info["seriesStartYear"]
+		try:
+			show_start_year = show_info["seriesStartYear"]
+		except KeyError:
+			show_start_year = ""
+		
 		try:
 			show_end_year = show_info["seriesEndYear"]
 		except KeyError:
@@ -353,7 +362,12 @@ class AddShow(QDialog):
 
 	def get_running_time(self, fetched_show_info_detailed, show_info_auxiliary):
 		# Moved code that retrieves running time to this function, because there are a lot of nuance with it on IMDB side.
-		first_episode_imdb_id = check_if_input_contains_IMDB_id(fetched_show_info_detailed['episodes'][1]['id']) # This is needed because IMDB shows different running time for tvMiniSeries (full run) and tvSeries (just for an episode).
+		
+		# When show is in early stages of development it might be missing some info. And that might crash the program
+		try:
+			first_episode_imdb_id = check_if_input_contains_IMDB_id(fetched_show_info_detailed['episodes'][1]['id']) # This is needed because IMDB shows different running time for tvMiniSeries (full run) and tvSeries (just for an episode).
+		except IndexError:
+			return 0
 			
 		episode_run_time = self.imdb.get_title(first_episode_imdb_id)
 		
@@ -385,6 +399,9 @@ class AddShow(QDialog):
 		## Then tries to download show cover with image(url) passed to the program.
 		if has_internet_connection() == False:
 			MessagePrompt("Please connect to internet").exec_() # This class is defined in misc.py
+			return False
+		elif len(image) == 0:
+			self.info_box.append("Could not find an image url")
 			return False
 		else:
 			path_to_cover = settings.value("coverDir") + IMDB_id + ".jpg"
