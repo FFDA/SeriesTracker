@@ -467,7 +467,11 @@ class UpdateShowInfo(QDialog):
 		# If it can't get a second year it means, that show is still airing. It's not always the case, but it best I can do.
 		# If finished_aird last year matches the start year it means that show aired just for one year.
 		show_info_auxiliary = self.imdb.get_title_auxiliary(IMDB_id) # Retrieving show's info from IMDB
-		show_start_year = show_info_auxiliary["seriesStartYear"]
+		try:
+			show_start_year = show_info_auxiliary["seriesStartYear"]
+		except KeyError:
+			show_start_year = ""
+		
 		try:
 			show_end_year = show_info_auxiliary["seriesEndYear"]
 		except KeyError:
@@ -533,8 +537,13 @@ class UpdateShowInfo(QDialog):
 
 	def get_running_time(self, fetched_show_info_detailed, show_info_auxiliary):
 		# Moved code that retrieves running time to this function, because there are a lot of nuance with it on IMDB side.
-		first_episode_imdb_id = check_if_input_contains_IMDB_id(fetched_show_info_detailed['episodes'][1]['id']) # This is needed because IMDB shows different running time for tvMiniSeries (full run) and tvSeries (just for an episode).
-			
+		
+		# When show is in early stages of development it might be missing some info. And that might crash the program
+		try:
+			first_episode_imdb_id = check_if_input_contains_IMDB_id(fetched_show_info_detailed['episodes'][1]['id']) # This is needed because IMDB shows different running time for tvMiniSeries (full run) and tvSeries (just for an episode).
+		except IndexError:
+			return 0
+
 		episode_run_time = self.imdb.get_title(first_episode_imdb_id)
 		
 		if show_info_auxiliary['titleType'] == 'tvSeries':
