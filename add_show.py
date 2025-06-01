@@ -178,7 +178,7 @@ class AddShow(QDialog):
 			seasons = len(season_list) - 1
 		
 		# Genres of the show
-		genres = " ".join(show_info["genres"])
+		genres = " ".join(show_info["genres"]) if show_info["genres"] is not None else ""
 		
 		# Tries to get years when show started and finish airing.
 		# If it can't get a second year it means, that show is still airing. It's not always the case, but it best I can do.
